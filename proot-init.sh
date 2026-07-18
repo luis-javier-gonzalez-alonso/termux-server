@@ -36,14 +36,20 @@ wget -q $NGROK_URL -O ngrok.tgz
 tar -xzf ngrok.tgz -C /usr/local/bin
 rm ngrok.tgz
 
+# Install dashboard system-wide
+cp /opt/termux-server/dashboard.sh /usr/local/bin/dashboard.sh
+chmod +x /usr/local/bin/dashboard.sh
+
 # Add dashboard to profile so it runs automatically upon login
 if ! grep -q "DASHBOARD_SHOWN" /root/.profile 2>/dev/null; then
 cat << 'EOF' >> /root/.profile
 
 # Termux Server Dashboard Auto-Start
 if [ -z "$DASHBOARD_SHOWN" ] && [ -t 1 ]; then
-    export DASHBOARD_SHOWN=1
-    /root/dashboard.sh
+    if [ -f /usr/local/bin/dashboard.sh ]; then
+        export DASHBOARD_SHOWN=1
+        /usr/local/bin/dashboard.sh
+    fi
 fi
 EOF
 fi

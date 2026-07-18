@@ -20,14 +20,14 @@ fi
 echo "Copying initialization scripts to Alpine..."
 ALPINE_ROOT="$PREFIX/var/lib/proot-distro/installed-rootfs/alpine"
 
-mkdir -p "$ALPINE_ROOT/root"
-cp proot-init.sh "$ALPINE_ROOT/root/"
-cp dashboard.sh "$ALPINE_ROOT/root/"
-chmod +x "$ALPINE_ROOT/root/proot-init.sh"
-chmod +x "$ALPINE_ROOT/root/dashboard.sh"
+mkdir -p "$ALPINE_ROOT/opt/termux-server"
+cp proot-init.sh "$ALPINE_ROOT/opt/termux-server/"
+cp dashboard.sh "$ALPINE_ROOT/opt/termux-server/"
+chmod +x "$ALPINE_ROOT/opt/termux-server/proot-init.sh"
+chmod +x "$ALPINE_ROOT/opt/termux-server/dashboard.sh"
 
 echo "Running initialization inside Alpine..."
-proot-distro login alpine -- /root/proot-init.sh
+proot-distro login alpine -- /opt/termux-server/proot-init.sh
 
 echo ""
 echo "================================================="
