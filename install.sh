@@ -17,17 +17,10 @@ if ! proot-distro login alpine -- /bin/true 2>/dev/null; then
     proot-distro install alpine --architecture arm
 fi
 
-echo "Copying initialization scripts to Alpine..."
-ALPINE_ROOT="$PREFIX/var/lib/proot-distro/installed-rootfs/alpine"
-
-mkdir -p "$ALPINE_ROOT/opt/termux-server"
-cp proot-init.sh "$ALPINE_ROOT/opt/termux-server/"
-cp dashboard.sh "$ALPINE_ROOT/opt/termux-server/"
-chmod +x "$ALPINE_ROOT/opt/termux-server/proot-init.sh"
-chmod +x "$ALPINE_ROOT/opt/termux-server/dashboard.sh"
-
 echo "Running initialization inside Alpine..."
-proot-distro login alpine -- /opt/termux-server/proot-init.sh
+# We use --bind to safely mount the current directory into /opt/termux-server
+# This completely avoids guessing where the rootfs is stored on the disk.
+proot-distro login alpine --bind "$PWD:/opt/termux-server" -- /bin/sh /opt/termux-server/proot-init.sh
 
 echo ""
 echo "================================================="
