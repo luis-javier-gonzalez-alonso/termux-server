@@ -5,7 +5,7 @@ echo "Starting Server Environment..."
 # Start sshd and ngrok in the background inside ubuntu
 # Note: ngrok requires an auth token to run tcp tunnels.
 # You need to run `ngrok config add-authtoken <token>` inside ubuntu first.
-proot-distro login ubuntu-20.04 -- /bin/bash -c "
+proot-distro login ubuntu -- /bin/bash -c "
     if ! pgrep -x sshd > /dev/null; then
         /usr/sbin/sshd
         echo 'SSH daemon started.'
@@ -28,4 +28,4 @@ proot-distro login ubuntu-20.04 -- /bin/bash -c "
 
 echo "Server started."
 echo "You can now enter the server environment by running:"
-echo "  proot-distro login ubuntu-20.04"
+echo "  proot-distro login ubuntu"
