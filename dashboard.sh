@@ -11,7 +11,7 @@ show_ngrok_url() {
         CLEAN_URL=${URL#tcp://}
         HOST=${CLEAN_URL%:*}
         PORT=${CLEAN_URL##*:}
-        whiptail --msgbox "Your server is accessible via SSH over the internet!\n\nUse the following command from your computer:\nssh root@${HOST} -p ${PORT}\n\nPassword is 'admin' (unless you changed it)." 12 70
+        whiptail --msgbox "Your server is accessible via SSH over the internet!\n\nUse the following command from your computer:\nssh root@${HOST} -p ${PORT}\n\nPassword is what you set during first login." 12 70
     fi
 }
 
@@ -41,22 +41,64 @@ install_ngrok_token() {
     fi
 }
 
+create_service_user() {
+    USERNAME=$(whiptail --inputbox "Enter a username for the new service (e.g. nginx-user, node-app):" 10 60 --title "Create Service User" 3>&1 1>&2 2>&3)
+    if [ ! -z "$USERNAME" ]; then
+        if id "$USERNAME" &>/dev/null; then
+            whiptail --msgbox "User '$USERNAME' already exists!" 8 45
+        else
+            clear
+            echo "Creating user '$USERNAME'..."
+            useradd -m -s /bin/bash "$USERNAME"
+            echo "Please set a password for the new service user '$USERNAME':"
+            passwd "$USERNAME"
+            if [ $? -eq 0 ]; then
+                whiptail --msgbox "Service user '$USERNAME' created successfully.\nHome directory: /home/$USERNAME\nThey can now login via SSH using this username and password." 12 60
+            else
+                userdel -r "$USERNAME"
+                whiptail --msgbox "Failed to set password. User creation aborted." 8 50
+            fi
+        fi
+    fi
+}
+
+if [ ! -f /root/.password_changed ]; then
+    whiptail --msgbox "SECURITY WARNING:\n\nYou must change the default root password before proceeding. 'admin' is not secure." 12 50
+    clear
+    echo "Changing password for root..."
+    while true; do
+        passwd
+        if [ $? -eq 0 ]; then
+            touch /root/.password_changed
+            whiptail --msgbox "Password updated successfully." 8 45
+            break
+        else
+            echo "Password change failed. Please try again."
+            sleep 2
+            clear
+            echo "Changing password for root..."
+        fi
+    done
+fi
+
 while true; do
-    CHOICE=$(whiptail --title "Termux Server Dashboard" --menu "Choose an option" 16 65 7 \
+    CHOICE=$(whiptail --title "Termux Server Dashboard" --menu "Choose an option" 17 65 7 \
     "1" "Show SSH Connection Details (Ngrok)" \
     "2" "View Services Status" \
     "3" "Change Root Password" \
     "4" "Configure Ngrok Authtoken" \
-    "5" "Open Shell" \
-    "6" "Exit" 3>&1 1>&2 2>&3)
+    "5" "Create Service User" \
+    "6" "Open Shell" \
+    "7" "Exit" 3>&1 1>&2 2>&3)
 
     case $CHOICE in
         1) show_ngrok_url ;;
         2) show_services ;;
         3) change_password ;;
         4) install_ngrok_token ;;
-        5) clear; echo "Dropping to shell. Type 'exit' to log out, or '/root/dashboard.sh' to return to menu."; break ;;
-        6) clear; exit 0 ;;
+        5) create_service_user ;;
+        6) clear; echo "Dropping to shell. Type 'exit' to log out, or '/root/dashboard.sh' to return to menu."; break ;;
+        7) clear; exit 0 ;;
         *) break ;;
     esac
 done
