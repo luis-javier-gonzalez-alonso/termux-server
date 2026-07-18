@@ -1,10 +1,10 @@
 # Termux Android Server Setup
 
-This repository contains a set of scripts to transform an Android phone running Termux into an isolated Debian Linux server accessible over the internet via SSH, complete with a graphical TUI dashboard.
+This repository contains a set of scripts to transform an Android phone running Termux into an isolated Ubuntu 20.04 Linux server accessible over the internet via SSH, complete with a graphical TUI dashboard.
 
 ## Overview
 
-The setup relies on `proot-distro` to install a real Debian filesystem inside Termux. This means:
+The setup relies on `proot-distro` to install a real Ubuntu 20.04 filesystem inside Termux. This means:
 - **No root access required** on your Android device.
 - You get a standard Linux environment (`apt`, `systemd` alternatives, standard file paths).
 - Your actual Android system files remain safe and untouched.
@@ -32,7 +32,7 @@ The setup relies on `proot-distro` to install a real Debian filesystem inside Te
    ```bash
    ./install.sh
    ```
-   *This process will take a few minutes as it downloads and extracts the Debian filesystem, and installs dependencies like OpenSSH, Ngrok, and Whiptail.*
+   *This process will take a few minutes as it downloads and extracts the Ubuntu 20.04 filesystem, and installs dependencies like OpenSSH, Ngrok, and Whiptail.*
 
 ## Starting the Server
 
@@ -44,10 +44,10 @@ To start the server environment (which boots up SSH and Ngrok):
 
 ## Accessing the Dashboard
 
-Once the Debian environment is set up and started, you can drop into the isolated server shell at any time by running:
+Once the Ubuntu environment is set up and started, you can drop into the isolated server shell at any time by running:
 
 ```bash
-proot-distro login debian
+proot-distro login ubuntu-20.04
 ```
 
 Upon logging in, you will be greeted by the **Termux Server Dashboard**. From this TUI you can:
