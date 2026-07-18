@@ -1,12 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 
-echo "Initializing Debian Server Environment..."
-apt-get update
-apt-get install -y openssh-server wget tar whiptail sudo curl jq procps inetutils-ping nano
+echo "Initializing Alpine Server Environment..."
+apk update
+apk add openssh wget tar sudo curl jq procps newt dialog
 
 # Configure SSH
 echo "Configuring SSH..."
 mkdir -p /run/sshd
+# Alpine requires generating host keys
+ssh-keygen -A
+
 # Use port 8022 because Termux cannot bind to ports < 1024 without root
 sed -i 's/^#Port 22/Port 8022/' /etc/ssh/sshd_config
 # Allow root login with password
@@ -33,9 +36,9 @@ wget -q $NGROK_URL -O ngrok.tgz
 tar -xzf ngrok.tgz -C /usr/local/bin
 rm ngrok.tgz
 
-# Add dashboard to bashrc so it runs automatically upon login
-if ! grep -q "DASHBOARD_SHOWN" /root/.bashrc; then
-cat << 'EOF' >> /root/.bashrc
+# Add dashboard to profile so it runs automatically upon login
+if ! grep -q "DASHBOARD_SHOWN" /root/.profile 2>/dev/null; then
+cat << 'EOF' >> /root/.profile
 
 # Termux Server Dashboard Auto-Start
 if [ -z "$DASHBOARD_SHOWN" ] && [ -t 1 ]; then
@@ -45,4 +48,4 @@ fi
 EOF
 fi
 
-echo "Initialization inside Debian complete."
+echo "Initialization inside Alpine complete."

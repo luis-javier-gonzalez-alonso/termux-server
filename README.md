@@ -1,10 +1,10 @@
 # Termux Android Server Setup
 
-This repository contains a set of scripts to transform an Android phone running Termux into an isolated Ubuntu Linux server accessible over the internet via SSH, complete with a graphical TUI dashboard.
+This repository contains a set of scripts to transform an Android phone running Termux into an isolated Alpine Linux server accessible over the internet via SSH, complete with a graphical TUI dashboard.
 
 ## Overview
 
-The setup relies on `proot-distro` to install a real Ubuntu filesystem inside Termux. This means:
+The setup relies on `proot-distro` to install a real Alpine filesystem inside Termux. This means:
 - **No root access required** on your Android device.
 - You get a standard Linux environment (`apt`, `systemd` alternatives, standard file paths).
 - Your actual Android system files remain safe and untouched.
@@ -32,7 +32,7 @@ The setup relies on `proot-distro` to install a real Ubuntu filesystem inside Te
    ```bash
    ./install.sh
    ```
-   *This process will take a few minutes as it downloads and extracts the Ubuntu filesystem, and installs dependencies like OpenSSH, Ngrok, and Whiptail.*
+   *This process will take a few minutes as it downloads and extracts the Alpine filesystem, and installs dependencies like OpenSSH, Ngrok, and Whiptail.*
 
 ## Starting the Server
 
@@ -44,10 +44,10 @@ To start the server environment (which boots up SSH and Ngrok):
 
 ## Accessing the Dashboard
 
-Once the Ubuntu environment is set up and started, you can drop into the isolated server shell at any time by running:
+Once the Alpine environment is set up and started, you can drop into the isolated server shell at any time by running:
 
 ```bash
-proot-distro login ubuntu
+proot-distro login alpine
 ```
 
 Upon logging in, you will be greeted by the **Termux Server Dashboard**. From this TUI you can:

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 show_ngrok_url() {
     # Extract the ngrok tcp url from the local API
@@ -29,7 +29,7 @@ change_password() {
         echo "Changing password for user 'root':"
         passwd
         echo "Press Enter to return to the dashboard..."
-        read
+        read dummy
     fi
 }
 
@@ -44,18 +44,18 @@ install_ngrok_token() {
 create_service_user() {
     USERNAME=$(whiptail --inputbox "Enter a username for the new service (e.g. nginx-user, node-app):" 10 60 --title "Create Service User" 3>&1 1>&2 2>&3)
     if [ ! -z "$USERNAME" ]; then
-        if id "$USERNAME" &>/dev/null; then
+        if id "$USERNAME" >/dev/null 2>&1; then
             whiptail --msgbox "User '$USERNAME' already exists!" 8 45
         else
             clear
             echo "Creating user '$USERNAME'..."
-            useradd -m -s /bin/bash "$USERNAME"
+            adduser -D -s /bin/sh "$USERNAME"
             echo "Please set a password for the new service user '$USERNAME':"
             passwd "$USERNAME"
             if [ $? -eq 0 ]; then
                 whiptail --msgbox "Service user '$USERNAME' created successfully.\nHome directory: /home/$USERNAME\nThey can now login via SSH using this username and password." 12 60
             else
-                userdel -r "$USERNAME"
+                deluser "$USERNAME"
                 whiptail --msgbox "Failed to set password. User creation aborted." 8 50
             fi
         fi
