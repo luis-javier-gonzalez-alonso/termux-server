@@ -9,6 +9,15 @@ pkg install -y proot-distro
 echo "Installing Debian..."
 proot-distro install debian
 
+echo "Testing Debian environment architecture..."
+if ! proot-distro login debian -- /bin/true 2>/dev/null; then
+    echo "WARNING: 'exec format error' or similar detected."
+    echo "This usually happens if you are using the Play Store version of Termux (which is 32-bit) on a 64-bit device, or if your phone has a 32-bit Android OS."
+    echo "Attempting to fallback to 32-bit (arm) Debian..."
+    proot-distro remove debian
+    proot-distro install debian --architecture arm
+fi
+
 echo "Copying initialization scripts to Debian..."
 DEBIAN_ROOT="$PREFIX/var/lib/proot-distro/installed-rootfs/debian"
 
