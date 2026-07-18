@@ -20,6 +20,7 @@ fi
 echo "Copying initialization scripts to Alpine..."
 ALPINE_ROOT="$PREFIX/var/lib/proot-distro/installed-rootfs/alpine"
 
+mkdir -p "$ALPINE_ROOT/root"
 cp proot-init.sh "$ALPINE_ROOT/root/"
 cp dashboard.sh "$ALPINE_ROOT/root/"
 chmod +x "$ALPINE_ROOT/root/proot-init.sh"
