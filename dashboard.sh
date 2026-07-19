@@ -1,17 +1,31 @@
 #!/bin/sh
 
 show_ngrok_url() {
-    # Extract the ngrok tcp url from the local API
-    URL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' 2>/dev/null)
+    # Extract the ngrok urls from the local API
+    JSON=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null)
+    TUNNELS=$(echo "$JSON" | jq -r '.tunnels[] | "\(.name): \(.public_url)"' 2>/dev/null)
     
-    if [ -z "$URL" ] || [ "$URL" == "null" ]; then
-        whiptail --msgbox "Ngrok is not running or no tunnel is active.\n\nNgrok requires an authtoken for TCP tunnels. To set it up:\n1. Open Shell\n2. Run: ngrok config add-authtoken <your-token>\n3. Exit shell and run start-server.sh again." 12 65
+    if [ -z "$TUNNELS" ]; then
+        whiptail --msgbox "Ngrok is not running or no tunnels are active.\n\nEnsure your authtoken is configured." 10 60
     else
-        # Remove tcp:// prefix
-        CLEAN_URL=${URL#tcp://}
-        HOST=${CLEAN_URL%:*}
-        PORT=${CLEAN_URL##*:}
-        whiptail --msgbox "Your server is accessible via SSH over the internet!\n\nUse the following command from your computer:\nssh root@${HOST} -p ${PORT}\n\nPassword is what you set during first login." 12 70
+        MSG="Active Ngrok Tunnels:\n\n"
+        echo "$TUNNELS" > /tmp/ngrok_tunnels.txt
+        while IFS= read -r line; do
+            NAME=$(echo "$line" | cut -d':' -f1)
+            URL=$(echo "$line" | cut -d' ' -f2-)
+            if [ "$NAME" = "ssh" ]; then
+                CLEAN_URL=${URL#tcp://}
+                HOST=${CLEAN_URL%:*}
+                PORT=${CLEAN_URL##*:}
+                MSG="$MSG- [SSH] ssh root@${HOST} -p ${PORT}\n"
+            else
+                MSG="$MSG- [$NAME] $URL\n"
+            fi
+        done < /tmp/ngrok_tunnels.txt
+        rm -f /tmp/ngrok_tunnels.txt
+        
+        MSG="$MSG\nPassword for SSH is what you set during first login."
+        whiptail --msgbox "$MSG" 16 75
     fi
 }
 
@@ -62,6 +76,23 @@ create_service_user() {
     fi
 }
 
+add_ngrok_service() {
+    NAME=$(whiptail --inputbox "Enter a name for the HTTP service (e.g. webapp):" 10 60 --title "Add Ngrok Service" 3>&1 1>&2 2>&3)
+    if [ -z "$NAME" ]; then return; fi
+    
+    PORT=$(whiptail --inputbox "Enter the port number this service runs on (e.g. 11001):" 10 60 --title "Add Ngrok Service" 3>&1 1>&2 2>&3)
+    if [ -z "$PORT" ]; then return; fi
+    
+    # Append to ngrok.yml
+    echo "  $NAME:" >> /root/.config/ngrok/ngrok.yml
+    echo "    proto: http" >> /root/.config/ngrok/ngrok.yml
+    echo "    addr: $PORT" >> /root/.config/ngrok/ngrok.yml
+    
+    whiptail --msgbox "Service '$NAME' added on port $PORT!\nRestarting Ngrok..." 8 50
+    pkill -x ngrok
+    nohup ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout > /var/log/ngrok.log 2>&1 &
+}
+
 if [ ! -f /root/.password_changed ]; then
     whiptail --msgbox "SECURITY WARNING:\n\nYou must change the default root password before proceeding. 'admin' is not secure." 12 50
     clear
@@ -82,14 +113,15 @@ if [ ! -f /root/.password_changed ]; then
 fi
 
 while true; do
-    CHOICE=$(whiptail --title "Termux Server Dashboard" --menu "Choose an option" 17 65 7 \
-    "1" "Show SSH Connection Details (Ngrok)" \
+    CHOICE=$(whiptail --title "Termux Server Dashboard" --menu "Choose an option" 18 65 8 \
+    "1" "Show Exposed Connection Details (Ngrok)" \
     "2" "View Services Status" \
     "3" "Change Root Password" \
     "4" "Configure Ngrok Authtoken" \
     "5" "Create Service User" \
-    "6" "Open Shell" \
-    "7" "Exit" 3>&1 1>&2 2>&3)
+    "6" "Add Exposed Service (HTTP)" \
+    "7" "Open Shell" \
+    "8" "Exit" 3>&1 1>&2 2>&3)
 
     case $CHOICE in
         1) show_ngrok_url ;;
@@ -97,8 +129,9 @@ while true; do
         3) change_password ;;
         4) install_ngrok_token ;;
         5) create_service_user ;;
-        6) clear; echo "Dropping to shell. Type 'exit' to log out, or '/root/dashboard.sh' to return to menu."; break ;;
-        7) clear; exit 0 ;;
+        6) add_ngrok_service ;;
+        7) clear; echo "Dropping to shell. Type 'exit' to log out, or '/root/dashboard.sh' to return to menu."; break ;;
+        8) clear; exit 0 ;;
         *) break ;;
     esac
 done

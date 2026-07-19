@@ -10,8 +10,8 @@ mkdir -p /run/sshd
 # Alpine requires generating host keys
 ssh-keygen -A
 
-# Use port 8022 because Termux cannot bind to ports < 1024 without root
-sed -i 's/^#Port 22/Port 8022/' /etc/ssh/sshd_config
+# Use port 12020 because Termux cannot bind to ports < 1024 without root
+sed -i 's/^#Port 22/Port 12020/' /etc/ssh/sshd_config
 # Allow root login with password
 sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 
