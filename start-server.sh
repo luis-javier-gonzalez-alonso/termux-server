@@ -3,19 +3,19 @@
 echo "Starting Server Environment..."
 
 # Check if ngrok is configured before dropping into the background script
-if ! proot-distro login alpine -- grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
+if ! proot-distro login alpine --isolated -- grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
     echo ""
     echo "Ngrok Authtoken not found."
     echo "You can get your authtoken at https://dashboard.ngrok.com/get-started/your-authtoken"
     printf "Enter your Ngrok Authtoken (or press Enter to skip): "
     read TOKEN
     if [ -n "$TOKEN" ]; then
-        proot-distro login alpine -- /bin/sh -c "ngrok config add-authtoken '$TOKEN'"
+        proot-distro login alpine --isolated -- /bin/sh -c "ngrok config add-authtoken '$TOKEN'"
     fi
 fi
 
 # Start ngrok in the background inside alpine
-proot-distro login alpine -- /bin/sh -c "
+proot-distro login alpine --isolated -- /bin/sh -c "
     if ! pgrep -x ngrok > /dev/null; then
         if grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
             # Ensure tunnels config exists
@@ -34,4 +34,4 @@ proot-distro login alpine -- /bin/sh -c "
 
 echo "Server started."
 echo "You can now enter the server environment by running:"
-echo "  proot-distro login alpine"
+echo "  proot-distro login alpine --isolated"
