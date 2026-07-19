@@ -2,21 +2,7 @@
 
 echo "Initializing Alpine Server Environment..."
 apk update
-apk add openssh wget tar sudo curl jq procps newt dialog
-
-# Configure SSH
-echo "Configuring SSH..."
-mkdir -p /run/sshd
-# Alpine requires generating host keys
-ssh-keygen -A
-
-# Use port 12020 because Termux cannot bind to ports < 1024 without root
-sed -i 's/^#Port 22/Port 12020/' /etc/ssh/sshd_config
-# Allow root login with password
-sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-
-# Set root password to something default
-echo "root:admin" | chpasswd
+apk add wget tar sudo curl jq procps newt dialog
 
 # Install ngrok
 echo "Installing ngrok..."

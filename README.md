@@ -1,6 +1,6 @@
 # Termux Android Server Setup
 
-This repository contains a set of scripts to transform an Android phone running Termux into an isolated Alpine Linux server accessible over the internet via SSH, complete with a graphical TUI dashboard.
+This repository contains a set of scripts to transform an Android phone running Termux into an isolated Alpine Linux server accessible over the internet, complete with a graphical TUI dashboard.
 
 ## Overview
 
@@ -32,11 +32,11 @@ The setup relies on `proot-distro` to install a real Alpine filesystem inside Te
    ```bash
    ./install.sh
    ```
-   *This process will take a few minutes as it downloads and extracts the Alpine filesystem, and installs dependencies like OpenSSH, Ngrok, and Whiptail.*
+   *This process will take a few minutes as it downloads and extracts the Alpine filesystem, and installs dependencies like Ngrok and Whiptail.*
 
 ## Starting the Server
 
-To start the server environment (which boots up SSH and Ngrok):
+To start the server environment (which boots up Ngrok):
 
 ```bash
 ./start-server.sh
@@ -52,15 +52,7 @@ proot-distro login alpine
 
 Upon logging in, you will be greeted by the **Termux Server Dashboard**. From this TUI you can:
 - Configure your Ngrok Authtoken.
-- View your remote SSH Connection details.
+- View your active Ngrok Endpoints.
 - See which services are running.
-- Change the root password (default is `admin`).
+- Add an Exposed Service (HTTP) to your configuration.
 - Drop to a standard bash shell.
-
-## Remote SSH Access
-
-Once your Ngrok tunnel is running, you can access your phone remotely from any computer:
-```bash
-ssh root@<ngrok-host> -p <ngrok-port>
-```
-When prompted for a password, enter `admin` (or the password you changed it to).
