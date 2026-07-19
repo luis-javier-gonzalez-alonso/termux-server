@@ -9,10 +9,10 @@ proot-distro login alpine -- /bin/sh -c "
     if ! pgrep -x ngrok > /dev/null; then
         # Check if ngrok is configured, if not, prompt for it
         if ! grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
-            echo ""
-            echo "Ngrok Authtoken not found."
-            echo "You can get your authtoken at https://dashboard.ngrok.com/get-started/your-authtoken"
-            printf "Enter your Ngrok Authtoken (or press Enter to skip): "
+            echo ''
+            echo 'Ngrok Authtoken not found.'
+            echo 'You can get your authtoken at https://dashboard.ngrok.com/get-started/your-authtoken'
+            printf 'Enter your Ngrok Authtoken (or press Enter to skip): '
             read TOKEN
             if [ -n "$TOKEN" ]; then
                 ngrok config add-authtoken "$TOKEN"
