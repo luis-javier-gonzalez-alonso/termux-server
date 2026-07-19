@@ -17,11 +17,11 @@ proot-distro login alpine -- /bin/sh -c "
         # Check if ngrok is configured
         if grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
             # Ensure SSH tunnel config exists
-            if ! grep -q "tunnels:" /root/.config/ngrok/ngrok.yml; then
-                echo "tunnels:" >> /root/.config/ngrok/ngrok.yml
-                echo "  ssh:" >> /root/.config/ngrok/ngrok.yml
-                echo "    proto: tcp" >> /root/.config/ngrok/ngrok.yml
-                echo "    addr: 12020" >> /root/.config/ngrok/ngrok.yml
+            if ! grep -q 'tunnels:' /root/.config/ngrok/ngrok.yml; then
+                echo 'tunnels:' >> /root/.config/ngrok/ngrok.yml
+                echo '  ssh:' >> /root/.config/ngrok/ngrok.yml
+                echo '    proto: tcp' >> /root/.config/ngrok/ngrok.yml
+                echo '    addr: 12020' >> /root/.config/ngrok/ngrok.yml
             fi
             nohup ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout > /var/log/ngrok.log 2>&1 &
             echo 'Ngrok started.'
