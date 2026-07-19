@@ -2,7 +2,8 @@
 
 echo "Initializing Alpine Server Environment..."
 apk update
-apk add wget tar sudo curl jq procps newt dialog
+apk add wget tar sudo curl jq procps newt dialog nodejs npm
+
 
 # Install ngrok
 echo "Installing ngrok..."
@@ -39,5 +40,8 @@ if [ -z "$DASHBOARD_SHOWN" ] && [ -t 1 ]; then
 fi
 EOF
 fi
+
+echo "Installing json-store dependencies..."
+cd /opt/termux-server/tools/json-store && npm install
 
 echo "Initialization inside Alpine complete."
