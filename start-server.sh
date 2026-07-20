@@ -2,6 +2,20 @@
 
 echo "Starting Server Environment..."
 
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
+echo "Syncing latest scripts to Alpine environment..."
+proot-distro login alpine --isolated --bind "$DIR:/opt/termux-server" -- /bin/sh -c "
+    cp /opt/termux-server/dashboard.sh /usr/local/bin/dashboard.sh
+    chmod +x /usr/local/bin/dashboard.sh
+    
+    mkdir -p /usr/local/share/termux-server
+    # Use -a to preserve permissions and -u to only copy newer files to keep it fast
+    cp -au /opt/termux-server/tools /usr/local/share/termux-server/
+    
+    # Ensure dependencies are up to date
+    cd /usr/local/share/termux-server/tools/json-store && npm install --no-audit --no-fund --silent >/dev/null 2>&1
+"
 # Check if ngrok is configured before dropping into the background script
 if ! proot-distro login alpine --isolated -- grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
     echo ""
