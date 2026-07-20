@@ -56,10 +56,10 @@ start_json_store() {
     PORT=$(whiptail --inputbox "Enter the port for JSON store (e.g. 3000):" 0 0 "3000" --title "Start JSON Object Storage" 3>&1 1>&2 2>&3)
     if [ -z "$PORT" ]; then return; fi
     
-    FOLDER=$(whiptail --inputbox "Enter the folder path to serve (e.g. /opt/termux-server/data):" 0 0 "/opt/termux-server/data" --title "Start JSON Object Storage" 3>&1 1>&2 2>&3)
+    FOLDER=$(whiptail --inputbox "Enter the folder path to serve (e.g. /root/data):" 0 0 "/root/data" --title "Start JSON Object Storage" 3>&1 1>&2 2>&3)
     if [ -z "$FOLDER" ]; then return; fi
     
-    nohup node /opt/termux-server/tools/json-store/index.js --port "$PORT" --folder "$FOLDER" > /var/log/json-store-$PORT.log 2>&1 &
+    nohup node /usr/local/share/termux-server/tools/json-store/index.js --port "$PORT" --folder "$FOLDER" > /var/log/json-store-$PORT.log 2>&1 &
     whiptail --scrolltext --msgbox "JSON Object Storage started on port $PORT!\nServing: $FOLDER\nLogs: /var/log/json-store-$PORT.log" 0 0
 }
 
@@ -72,7 +72,7 @@ open_tools() {
         
         case $TOOL_CHOICE in
             1) start_json_store ;;
-            2) sh /opt/termux-server/tools/script-runner/runner.sh ;;
+            2) sh /usr/local/share/termux-server/tools/script-runner/runner.sh ;;
             3) break ;;
             *) break ;;
         esac

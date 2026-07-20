@@ -41,7 +41,11 @@ fi
 EOF
 fi
 
+echo "Installing tools into Alpine filesystem..."
+mkdir -p /usr/local/share/termux-server
+cp -r /opt/termux-server/tools /usr/local/share/termux-server/
+
 echo "Installing json-store dependencies..."
-cd /opt/termux-server/tools/json-store && npm install
+cd /usr/local/share/termux-server/tools/json-store && npm install
 
 echo "Initialization inside Alpine complete."

@@ -34,7 +34,7 @@ proot-distro login alpine --isolated -- /bin/sh -c "
 
 # Start Script Runner startup scripts
 proot-distro login alpine --isolated -- /bin/sh -c "
-    if [ -f /opt/termux-server/tools/script-runner/startup.list ]; then
+    if [ -f /usr/local/share/termux-server/tools/script-runner/startup.list ]; then
         while IFS='|' read -r sname cmd; do
             if [ -n \"\$sname\" ]; then
                 if ! tmux has-session -t \"\$sname\" 2>/dev/null; then
@@ -42,7 +42,7 @@ proot-distro login alpine --isolated -- /bin/sh -c "
                     echo \"Started Script Runner session: \$sname\"
                 fi
             fi
-        done < /opt/termux-server/tools/script-runner/startup.list
+        done < /usr/local/share/termux-server/tools/script-runner/startup.list
     fi
 "
 

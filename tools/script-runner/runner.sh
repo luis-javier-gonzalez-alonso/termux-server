@@ -1,6 +1,6 @@
 #!/bin/sh
 
-STARTUP_FILE="/opt/termux-server/tools/script-runner/startup.list"
+STARTUP_FILE="/usr/local/share/termux-server/tools/script-runner/startup.list"
 
 start_script() {
     SNAME=$(whiptail --inputbox "Enter a name for this session (no spaces):" 0 0 --title "Start Script" 3>&1 1>&2 2>&3)
@@ -13,7 +13,7 @@ start_script() {
     if [ -z "$CMD" ]; then return; fi
 
     if whiptail --yesno "Run this script automatically on server startup?" 0 0 --title "Startup Config"; then
-        mkdir -p /opt/termux-server/tools/script-runner
+        mkdir -p /usr/local/share/termux-server/tools/script-runner
         # Remove old entry if exists to avoid duplicates
         if [ -f "$STARTUP_FILE" ]; then
             grep -v "^$SNAME|" "$STARTUP_FILE" > "${STARTUP_FILE}.tmp"
