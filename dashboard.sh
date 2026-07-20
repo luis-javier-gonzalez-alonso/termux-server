@@ -59,6 +59,16 @@ start_json_store() {
     FOLDER=$(whiptail --inputbox "Enter the folder path to serve (e.g. /root/data):" 0 0 "/root/data" --title "Start JSON Object Storage" 3>&1 1>&2 2>&3)
     if [ -z "$FOLDER" ]; then return; fi
     
+    if whiptail --yesno "Do you want to automatically expose port $PORT to the internet using Ngrok?" 0 0 --title "Expose Service"; then
+        if ! grep -q "addr: $PORT" /root/.config/ngrok/ngrok.yml 2>/dev/null; then
+            echo "  json-store-$PORT:" >> /root/.config/ngrok/ngrok.yml
+            echo "    proto: http" >> /root/.config/ngrok/ngrok.yml
+            echo "    addr: $PORT" >> /root/.config/ngrok/ngrok.yml
+            pkill -x ngrok
+            nohup ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout > /var/log/ngrok.log 2>&1 &
+        fi
+    fi
+    
     nohup node /usr/local/share/termux-server/tools/json-store/index.js --port "$PORT" --folder "$FOLDER" > /var/log/json-store-$PORT.log 2>&1 &
     whiptail --scrolltext --msgbox "JSON Object Storage started on port $PORT!\nServing: $FOLDER\nLogs: /var/log/json-store-$PORT.log" 0 0
 }
