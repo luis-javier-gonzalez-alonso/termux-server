@@ -32,6 +32,20 @@ proot-distro login alpine --isolated -- /bin/sh -c "
     fi
 "
 
+# Start Script Runner startup scripts
+proot-distro login alpine --isolated -- /bin/sh -c "
+    if [ -f /opt/termux-server/tools/script-runner/startup.list ]; then
+        while IFS='|' read -r sname cmd; do
+            if [ -n \"\$sname\" ]; then
+                if ! tmux has-session -t \"\$sname\" 2>/dev/null; then
+                    tmux new-session -d -s \"\$sname\" \"\$cmd\"
+                    echo \"Started Script Runner session: \$sname\"
+                fi
+            fi
+        done < /opt/termux-server/tools/script-runner/startup.list
+    fi
+"
+
 echo "Server started."
 echo "You can now enter the server environment by running:"
 echo "  proot-distro login alpine --isolated"

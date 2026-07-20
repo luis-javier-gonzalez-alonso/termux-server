@@ -67,11 +67,13 @@ open_tools() {
     while true; do
         TOOL_CHOICE=$(whiptail --title "Tools Menu" --menu "Choose a tool" 14 65 4 \
         "1" "Start JSON Object Storage" \
-        "2" "Back to Main Menu" 3>&1 1>&2 2>&3)
+        "2" "Script Runner (tmux)" \
+        "3" "Back to Main Menu" 3>&1 1>&2 2>&3)
         
         case $TOOL_CHOICE in
             1) start_json_store ;;
-            2) break ;;
+            2) sh /opt/termux-server/tools/script-runner/runner.sh ;;
+            3) break ;;
             *) break ;;
         esac
     done

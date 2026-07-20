@@ -2,7 +2,7 @@
 
 echo "Initializing Alpine Server Environment..."
 apk update
-apk add wget tar sudo curl jq procps newt dialog nodejs npm
+apk add wget tar sudo curl jq procps newt dialog nodejs npm tmux
 
 
 # Install ngrok
