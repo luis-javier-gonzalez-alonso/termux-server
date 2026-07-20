@@ -14,8 +14,23 @@ proot-distro login alpine --isolated --bind "$DIR:/opt/termux-server" -- /bin/sh
     cp -au /opt/termux-server/tools /usr/local/share/termux-server/
     
     # Ensure dependencies are up to date
-    cd /usr/local/share/termux-server/tools/json-store && npm install --no-audit --no-fund --silent >/dev/null 2>&1
+    # Create a safe boot script to avoid quoting issues
+    cat << 'BOOTEOF' > /usr/local/share/termux-server/boot.sh
+#!/bin/sh
+if [ -f /usr/local/share/termux-server/tools/script-runner/startup.list ]; then
+    while IFS='|' read -r sname cmd || [ -n "$sname" ]; do
+        if [ -n "$sname" ]; then
+            if ! tmux has-session -t "$sname" 2>/dev/null; then
+                tmux new-session -d -s "$sname" "$cmd"
+                echo "Started Script Runner session: $sname"
+            fi
+        fi
+    done < /usr/local/share/termux-server/tools/script-runner/startup.list
+fi
+BOOTEOF
+    chmod +x /usr/local/share/termux-server/boot.sh
 "
+
 # Check if ngrok is configured before dropping into the background script
 if ! proot-distro login alpine --isolated -- grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
     echo ""
@@ -47,18 +62,7 @@ proot-distro login alpine --isolated -- /bin/sh -c "
 "
 
 # Start Script Runner startup scripts
-proot-distro login alpine --isolated -- /bin/sh -c "
-    if [ -f /usr/local/share/termux-server/tools/script-runner/startup.list ]; then
-        while IFS='|' read -r sname cmd; do
-            if [ -n \"\$sname\" ]; then
-                if ! tmux has-session -t \"\$sname\" 2>/dev/null; then
-                    tmux new-session -d -s \"\$sname\" \"\$cmd\"
-                    echo \"Started Script Runner session: \$sname\"
-                fi
-            fi
-        done < /usr/local/share/termux-server/tools/script-runner/startup.list
-    fi
-"
+proot-distro login alpine --isolated -- /bin/sh -c "/usr/local/share/termux-server/boot.sh"
 
 echo "Server started."
 echo "You can now enter the server environment by running:"
