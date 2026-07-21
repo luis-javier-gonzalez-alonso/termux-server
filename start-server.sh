@@ -29,13 +29,13 @@ sh "$DIR/tools/script-runner/boot.sh"
 echo "Ensuring native Node.js is installed for the Web Dashboard..."
 if ! command -v node >/dev/null 2>&1; then
     echo "Installing nodejs natively in Termux..."
-    pkg install -y nodejs
+    pkg install -y openssl nodejs
 fi
 
 echo "Starting Web Dashboard..."
-cd "$DIR/tools/web-dashboard" && npm install --no-audit --no-fund --silent >/dev/null 2>&1
+cd "$DIR/tools/web-dashboard" && npm install --no-audit --no-fund > npm-install.log 2>&1
 if ! tmux has-session -t "web-dashboard" 2>/dev/null; then
-    tmux new-session -d -c "$DIR/tools/web-dashboard" -s "web-dashboard" "node server.js"
+    tmux new-session -d -c "$DIR/tools/web-dashboard" -s "web-dashboard" "node server.js > dashboard.log 2>&1 || { echo 'Server crashed. Check dashboard.log'; cat dashboard.log; echo 'Press Enter to exit'; read r; }"
 fi
 
 echo "Server started."

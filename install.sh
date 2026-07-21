@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 echo "Updating Termux packages..."
-pkg update -y
+pkg upgrade -y
 
 echo "Installing required packages..."
 pkg install -y proot-distro tmux
