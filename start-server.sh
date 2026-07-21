@@ -40,9 +40,11 @@ fi
 
 echo "Starting Web Dashboard..."
 cd "$DIR/tools/web-dashboard" && npm install --no-audit --no-fund > npm-install.log 2>&1
-if ! tmux has-session -t "web-dashboard" 2>/dev/null; then
-    tmux new-session -d -c "$DIR/tools/web-dashboard" -s "web-dashboard" "node server.js > dashboard.log 2>&1 || { echo 'Server crashed. Check dashboard.log'; cat dashboard.log; echo 'Press Enter to exit'; read r; }"
+if tmux has-session -t "web-dashboard" 2>/dev/null; then
+    echo "Restarting existing Web Dashboard session..."
+    tmux kill-session -t "web-dashboard"
 fi
+tmux new-session -d -c "$DIR/tools/web-dashboard" -s "web-dashboard" "node server.js > dashboard.log 2>&1 || { echo 'Server crashed. Check dashboard.log'; cat dashboard.log; echo 'Press Enter to exit'; read r; }"
 
 echo "Server started."
 echo "You can now enter the server dashboard directly from Termux by running:"
