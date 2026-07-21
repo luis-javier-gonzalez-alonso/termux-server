@@ -166,7 +166,7 @@ app.post('/api/scripts/start', (req, res) => {
 
 // Deploy App via streaming POST
 app.post('/api/apps/deploy', (req, res) => {
-    const { url, name, startCmd, autostart } = req.body;
+    const { url, name, initCmd, startCmd, autostart } = req.body;
     if (!url) return res.status(400).send('URL required');
     
     res.setHeader('Content-Type', 'text/plain');
@@ -247,13 +247,36 @@ app.post('/api/apps/deploy', (req, res) => {
             }
         };
         
+        const runInitCommand = () => {
+            if (initCmd) {
+                sendLog(`\nRunning initialization command: ${initCmd}`);
+                const initProc = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', `cd "${appDir}" && eval "${initCmd}"`]);
+                
+                initProc.on('error', (err) => {
+                    sendLog(`\nWarning: Failed to spawn init command: ${err.message}`);
+                    finishDeployment();
+                });
+                
+                initProc.stdout.on('data', d => res.write(d));
+                initProc.stderr.on('data', d => res.write(d));
+                
+                initProc.on('close', icode => {
+                    if (icode !== 0) sendLog(`\nWarning: Init command exited with code ${icode}`);
+                    else sendLog('\nInit command completed successfully.');
+                    finishDeployment();
+                });
+            } else {
+                finishDeployment();
+            }
+        };
+        
         if (installCmd) {
             sendLog(`\nRunning dependency installation in Alpine... (this may take a while)`);
             const installer = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', installCmd]);
             
             installer.on('error', (err) => {
                 sendLog(`\nWarning: Failed to spawn dependency installer: ${err.message}`);
-                finishDeployment();
+                runInitCommand();
             });
 
             installer.stdout.on('data', d => res.write(d));
@@ -261,10 +284,10 @@ app.post('/api/apps/deploy', (req, res) => {
             installer.on('close', icode => {
                 if (icode !== 0) sendLog(`\nWarning: Dependency installation exited with code ${icode}`);
                 else sendLog('\nDependencies installed successfully.');
-                finishDeployment();
+                runInitCommand();
             });
         } else {
-            finishDeployment();
+            runInitCommand();
         }
     });
 });
