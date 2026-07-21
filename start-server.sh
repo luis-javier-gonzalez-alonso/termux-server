@@ -17,6 +17,9 @@ fi
 echo "Ensuring json-store dependencies are installed in Alpine..."
 proot-distro login alpine --isolated -- /bin/sh -c "cd '/usr/local/share/termux-server/tools/json-store' && npm install --no-audit --no-fund --silent >/dev/null 2>&1"
 
+# Create symlink for easy access to apps when logged into Alpine
+proot-distro login alpine --isolated -- /bin/sh -c "ln -sf /data/data/com.termux/files/home/.termux-server /root/.termux-server"
+
 # Check if ngrok is configured
 if ! proot-distro login alpine --isolated -- grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
     echo ""

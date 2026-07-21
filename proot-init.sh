@@ -41,6 +41,10 @@ fi
 EOF
 fi
 
+# Create symlink to host .termux-server directory for easy access
+echo "Creating symlink for easy access to .termux-server..."
+ln -sf /data/data/com.termux/files/home/.termux-server /root/.termux-server
+
 echo "Installing tools into Alpine filesystem..."
 mkdir -p /usr/local/share/termux-server
 cp -r /opt/termux-server/tools /usr/local/share/termux-server/
