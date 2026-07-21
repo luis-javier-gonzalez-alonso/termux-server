@@ -8,6 +8,12 @@ STATE_DIR="$HOME/.termux-server"
 # Ensure global state directories exist
 mkdir -p "$STATE_DIR/apps"
 
+# Ensure proot-distro is installed
+if ! command -v proot-distro >/dev/null 2>&1; then
+    echo "proot-distro not found natively in Termux! Reinstalling..."
+    pkg install -y proot-distro
+fi
+
 echo "Ensuring json-store dependencies are installed in Alpine..."
 proot-distro login alpine --isolated -- /bin/sh -c "cd '/usr/local/share/termux-server/tools/json-store' && npm install --no-audit --no-fund --silent >/dev/null 2>&1"
 
