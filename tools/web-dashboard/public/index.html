@@ -274,10 +274,6 @@
                 <input type="text" id="depName" placeholder="my-app">
             </div>
             <div class="form-group">
-                <label>Init Command (Optional, e.g. 'npm run build' or './init.sh')</label>
-                <input type="text" id="depInit">
-            </div>
-            <div class="form-group">
                 <label>Start Command (Optional, e.g. 'npm start')</label>
                 <input type="text" id="depCmd">
             </div>
@@ -518,7 +514,6 @@
             const body = {
                 url: document.getElementById('depUrl').value,
                 name: document.getElementById('depName').value,
-                initCmd: document.getElementById('depInit').value,
                 startCmd: document.getElementById('depCmd').value,
                 autostart: document.getElementById('depAuto').checked
             };
