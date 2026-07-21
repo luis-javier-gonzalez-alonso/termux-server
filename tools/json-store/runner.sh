@@ -21,7 +21,7 @@ start_json_store() {
         fi
     fi
     
-    tmux new-session -d -c "$FOLDER" -s "json-store-$PORT" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \"$FOLDER\" && node \"$SCRIPT_DIR/index.js\" --port \"$PORT\" --folder \"$FOLDER\"'; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
+    tmux new-session -d -s "json-store-$PORT" "proot-distro login alpine --isolated -- /bin/sh -c 'mkdir -p \"$FOLDER\" && cd \"$FOLDER\" && node \"/usr/local/share/termux-server/tools/json-store/index.js\" --port \"$PORT\" --folder \"$FOLDER\"'; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
     whiptail --scrolltext --msgbox "JSON Object Storage started on port $PORT!\nServing: $FOLDER\nLogs: /var/log/json-store-$PORT.log" 0 0
 }
 

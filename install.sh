@@ -3,8 +3,8 @@
 echo "Updating Termux packages..."
 pkg update -y
 
-echo "Installing proot-distro..."
-pkg install -y proot-distro
+echo "Installing required packages..."
+pkg install -y proot-distro tmux
 
 echo "Installing Alpine Linux..."
 proot-distro install alpine
