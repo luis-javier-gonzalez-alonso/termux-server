@@ -209,13 +209,12 @@ app.post('/api/apps/:name/update', (req, res) => {
     res.setHeader('Transfer-Encoding', 'chunked');
     
     const sendLog = (msg) => res.write(`${msg}\n`);
-    sendLog(`Starting git pull for ${name}...`);
+    sendLog(`Starting git pull for ${name} natively...`);
     
-    const pullCmd = `cd "${appDir}" && git pull`;
-    const gitProc = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', pullCmd]);
+    const gitProc = spawn('git', ['pull'], { cwd: appDir });
     
     gitProc.on('error', (err) => {
-        res.write(`\n--- DONE: FAILED ---\nGit pull error: ${err.message}\n`);
+        res.write(`\n--- DONE: FAILED ---\nGit spawn error: ${err.message}\n`);
         res.end();
     });
     
@@ -289,9 +288,8 @@ app.post('/api/apps/deploy', (req, res) => {
         }
     }
     
-    sendLog(`Cloning repository in Alpine...`);
-    const cloneCmd = `git clone "${url}" "${appDir}"`;
-    const gitProc = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', cloneCmd]);
+    sendLog(`Cloning repository natively...`);
+    const gitProc = spawn('git', ['clone', url, appDir]);
     
     gitProc.on('error', (err) => {
         sendDone(false, `Git spawn error: ${err.message}`);
