@@ -48,8 +48,9 @@ add_ngrok_service() {
     echo "    addr: $PORT" >> /root/.config/ngrok/ngrok.yml
     
     whiptail --msgbox "Service '$NAME' added on port $PORT!\nRestarting Ngrok..." 0 0
+    if tmux has-session -t "ngrok-system" 2>/dev/null; then tmux kill-session -t "ngrok-system"; fi
     pkill -x ngrok
-    nohup ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout > /var/log/ngrok.log 2>&1 &
+    tmux new-session -d -s "ngrok-system" "ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout; echo ''; echo '--- Ngrok Exited ---'; echo 'Press Enter to close...'; read r"
 }
 
 start_json_store() {
@@ -64,12 +65,13 @@ start_json_store() {
             echo "  json-store-$PORT:" >> /root/.config/ngrok/ngrok.yml
             echo "    proto: http" >> /root/.config/ngrok/ngrok.yml
             echo "    addr: $PORT" >> /root/.config/ngrok/ngrok.yml
+            if tmux has-session -t "ngrok-system" 2>/dev/null; then tmux kill-session -t "ngrok-system"; fi
             pkill -x ngrok
-            nohup ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout > /var/log/ngrok.log 2>&1 &
+            tmux new-session -d -s "ngrok-system" "ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout; echo ''; echo '--- Ngrok Exited ---'; echo 'Press Enter to close...'; read r"
         fi
     fi
     
-    nohup node /usr/local/share/termux-server/tools/json-store/index.js --port "$PORT" --folder "$FOLDER" > /var/log/json-store-$PORT.log 2>&1 &
+    tmux new-session -d -c "$FOLDER" -s "json-store-$PORT" "node /usr/local/share/termux-server/tools/json-store/index.js --port '$PORT' --folder '$FOLDER'; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
     whiptail --scrolltext --msgbox "JSON Object Storage started on port $PORT!\nServing: $FOLDER\nLogs: /var/log/json-store-$PORT.log" 0 0
 }
 

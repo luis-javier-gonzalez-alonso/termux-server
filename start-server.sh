@@ -29,26 +29,20 @@ if ! proot-distro login alpine --isolated -- grep -q authtoken /root/.config/ngr
     fi
 fi
 
-# Start ngrok in the background inside alpine
-proot-distro login alpine --isolated -- /bin/sh -c "
-    if ! pgrep -x ngrok > /dev/null; then
-        if grep -q authtoken /root/.config/ngrok/ngrok.yml 2>/dev/null; then
-            # Ensure tunnels config exists
-            if ! grep -q 'tunnels:' /root/.config/ngrok/ngrok.yml 2>/dev/null; then
-                echo 'tunnels:' >> /root/.config/ngrok/ngrok.yml
-            fi
-            nohup ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout > /var/log/ngrok.log 2>&1 &
-            echo 'Ngrok started.'
-        else
-            echo 'WARNING: Ngrok not started. No authtoken configured.'
-        fi
-    else
-        echo 'Ngrok already running.'
+# Check if daemon is already running
+if [ -f "$DIR/daemon.pid" ]; then
+    PID=$(cat "$DIR/daemon.pid")
+    if kill -0 "$PID" 2>/dev/null; then
+        echo "Server daemon is already running (PID $PID)."
+        DAEMON_RUNNING=1
     fi
-"
+fi
 
-# Start Script Runner startup scripts
-proot-distro login alpine --isolated -- /bin/sh -c "sh /usr/local/share/termux-server/tools/script-runner/boot.sh"
+if [ -z "$DAEMON_RUNNING" ]; then
+    echo "Starting Termux Server background daemon..."
+    nohup proot-distro login alpine --isolated -- /bin/sh /usr/local/share/termux-server/tools/daemon.sh > /dev/null 2>&1 &
+    echo $! > "$DIR/daemon.pid"
+fi
 
 echo "Server started."
 echo "You can now enter the server environment by running:"
