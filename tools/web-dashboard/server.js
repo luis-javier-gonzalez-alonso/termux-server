@@ -156,7 +156,7 @@ app.post('/api/scripts/start', (req, res) => {
     }
     
     const sName = name.replace(/\s+/g, '');
-    const cmd = `tmux new-session -d -c "${workDir}" -s "${sName}" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${workDir}\\" \\"${command}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
+    const cmd = `tmux new-session -d -c "${workDir}" -s "${sName}" "proot-distro login alpine --isolated --bind \\"${workDir}:${workDir}\\" -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${workDir}\\" \\"${command}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
     
     exec(cmd, (err, stdout, stderr) => {
         if (err) return res.status(500).send(stderr || err.message);
@@ -332,7 +332,7 @@ app.post('/api/apps/deploy', (req, res) => {
             
             if (startCmd) {
                 sendLog(`Starting app session '${sName}'...`);
-                const tCmd = `tmux new-session -d -c "${appDir}" -s "${sName}" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${appDir}\\" \\"${startCmd}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
+                const tCmd = `tmux new-session -d -c "${appDir}" -s "${sName}" "proot-distro login alpine --isolated --bind \\"${appDir}:${appDir}\\" -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${appDir}\\" \\"${startCmd}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
                 exec(tCmd, (e, stdo, stde) => {
                     if (e) return sendDone(false, `Failed to start tmux session: ${stde || e.message}`);
                     sendDone(true, 'Deployment complete and app started successfully!');
@@ -344,7 +344,7 @@ app.post('/api/apps/deploy', (req, res) => {
         
         if (installCmd) {
             sendLog(`\nRunning dependency installation in Alpine... (this may take a while)`);
-            const installer = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', installCmd]);
+            const installer = spawn('proot-distro', ['login', 'alpine', '--isolated', '--bind', `${appDir}:${appDir}`, '--', '/bin/sh', '-c', installCmd]);
             
             installer.on('error', (err) => {
                 sendLog(`\nWarning: Failed to spawn dependency installer: ${err.message}`);
