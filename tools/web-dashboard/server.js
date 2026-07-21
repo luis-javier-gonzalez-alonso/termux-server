@@ -37,6 +37,14 @@ app.post('/api/sessions/kill', (req, res) => {
     });
 });
 
+app.get('/api/sessions/:name/log', (req, res) => {
+    const { name } = req.params;
+    exec(`tmux capture-pane -t "${name}" -p -S -100`, (err, stdout) => {
+        if (err) return res.status(500).send('Log not available or session dead.\n');
+        res.send(stdout);
+    });
+});
+
 app.get('/api/ngrok', (req, res) => {
     exec('curl -s http://127.0.0.1:4040/api/tunnels', (err, stdout) => {
         if (err) return res.json({ tunnels: [] });

@@ -250,6 +250,17 @@
     </div>
 
     <!-- Modals -->
+    <!-- View Log Modal -->
+    <div class="modal-overlay" id="viewLogModal">
+        <div class="modal">
+            <h2>Session Logs</h2>
+            <div id="viewLogTerminal" class="terminal" style="display:block;"></div>
+            <div style="display:flex; justify-content:flex-end;">
+                <button class="btn secondary" onclick="closeModal('viewLogModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Deploy Modal -->
     <div class="modal-overlay" id="deployModal">
         <div class="modal">
@@ -396,7 +407,10 @@
                             <span class="card-title">${s.name} <span class="badge">Running</span></span>
                             <span class="card-meta">Started: ${new Date(s.created * 1000).toLocaleString()}</span>
                         </div>
-                        <button class="btn danger" onclick="killSession('${s.name}')">Stop</button>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn secondary" onclick="viewLog('${s.name}')">Log</button>
+                            <button class="btn danger" onclick="killSession('${s.name}')">Stop</button>
+                        </div>
                     </div>
                 `).join('');
             } catch (e) { console.error(e); }
@@ -412,6 +426,20 @@
                 });
                 fetchSessions();
             } catch(e) { alert('Failed to stop session'); }
+        }
+
+        async function viewLog(name) {
+            openModal('viewLogModal');
+            const term = document.getElementById('viewLogTerminal');
+            term.innerHTML = 'Fetching logs...';
+            try {
+                const res = await fetch(`/api/sessions/${name}/log`);
+                const text = await res.text();
+                term.innerHTML = text ? text.replace(/\n/g, '<br>') : 'No logs available.';
+                term.scrollTop = term.scrollHeight;
+            } catch(e) {
+                term.innerHTML = '<span style="color:red">Failed to fetch logs.</span>';
+            }
         }
 
         async function fetchNgrok() {
