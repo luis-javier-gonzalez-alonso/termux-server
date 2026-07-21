@@ -19,6 +19,8 @@
             --success: #10b981;
         }
 
+        * { box-sizing: border-box; }
+
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
@@ -28,7 +30,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 40px 20px 100px;
         }
 
         .container {
@@ -41,6 +43,9 @@
         header {
             text-align: center;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         h1 {
@@ -59,29 +64,11 @@
             border-radius: 16px;
             padding: 24px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .panel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-        }
+        .panel h2 { margin-top: 0; font-size: 1.25rem; }
 
-        .panel h2 {
-            margin-top: 0;
-            font-size: 1.25rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 20px;
-        }
+        .list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
 
         .card {
             background: rgba(255, 255, 255, 0.03);
@@ -91,28 +78,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.2s;
         }
 
-        .card:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .card-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .card-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .card-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
+        .card-info { display: flex; flex-direction: column; gap: 4px; }
+        .card-title { font-weight: 600; font-size: 1.1rem; }
+        .card-meta { font-size: 0.85rem; color: var(--text-muted); }
 
         .btn {
             background: var(--primary);
@@ -123,24 +93,13 @@
             font-size: 0.9rem;
             cursor: pointer;
             font-weight: 600;
-            transition: background 0.2s, transform 0.1s;
+            transition: 0.2s;
         }
-
-        .btn:active {
-            transform: scale(0.95);
-        }
-
-        .btn:hover {
-            background: var(--primary-hover);
-        }
-
-        .btn.danger {
-            background: var(--danger);
-        }
-
-        .btn.danger:hover {
-            background: var(--danger-hover);
-        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn.danger { background: var(--danger); }
+        .btn.danger:hover { background: var(--danger-hover); }
+        .btn.secondary { background: rgba(255,255,255,0.1); }
+        .btn.secondary:hover { background: rgba(255,255,255,0.15); }
 
         .badge {
             background: rgba(16, 185, 129, 0.2);
@@ -151,19 +110,116 @@
             font-weight: 600;
         }
 
-        .empty-state {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 20px 0;
-            font-style: italic;
+        .empty-state { text-align: center; color: var(--text-muted); padding: 20px 0; font-style: italic; }
+
+        /* FAB Menu */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+        }
+        
+        .fab-menu {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .fab-menu.active { display: flex; }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        
+        .fab:hover { transform: scale(1.05); }
+        .fab.active { transform: rotate(45deg); background: var(--danger); }
+        
+        .fab-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            white-space: nowrap;
+        }
+        .fab-item:hover { background: rgba(255,255,255,0.1); }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal h2 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-muted); }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-family: inherit;
+        }
+        .form-group input[type="checkbox"] { width: auto; display: inline-block; }
+        
+        /* Terminal Log Viewer */
+        .terminal {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Termux Server</h1>
-            <p style="color: var(--text-muted); margin-top: 8px;">Local Dashboard</p>
+            <div>
+                <h1>Termux Server</h1>
+                <p style="color: var(--text-muted); margin-top: 8px; text-align: left;">Local Dashboard</p>
+            </div>
+            <button class="btn secondary" onclick="fetchSessions(); fetchNgrok();">Refresh Data</button>
         </header>
 
         <div class="panel">
@@ -181,7 +237,148 @@
         </div>
     </div>
 
+    <!-- FAB -->
+    <div class="fab-container">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-item" onclick="openModal('deployModal')">Deploy App (GitHub)</div>
+            <div class="fab-item" onclick="openModal('scriptModal')">Run Script Session</div>
+            <div class="fab-item" onclick="openModal('jsonModal')">Start JSON Store</div>
+            <div class="fab-item" onclick="openModal('ngrokServiceModal')">Add Ngrok Service</div>
+            <div class="fab-item" onclick="openModal('ngrokTokenModal')">Configure Ngrok Token</div>
+        </div>
+        <button class="fab" id="fabMain" onclick="toggleFab()">+</button>
+    </div>
+
+    <!-- Modals -->
+    <!-- Deploy Modal -->
+    <div class="modal-overlay" id="deployModal">
+        <div class="modal">
+            <h2>Deploy App</h2>
+            <div class="form-group">
+                <label>GitHub URL</label>
+                <input type="text" id="depUrl" placeholder="https://github.com/user/repo">
+            </div>
+            <div class="form-group">
+                <label>Session Name (Optional)</label>
+                <input type="text" id="depName" placeholder="my-app">
+            </div>
+            <div class="form-group">
+                <label>Start Command (Optional, e.g. 'npm start')</label>
+                <input type="text" id="depCmd">
+            </div>
+            <div class="form-group">
+                <input type="checkbox" id="depAuto"> <label style="display:inline">Add to Autostart</label>
+            </div>
+            <div id="deployTerminal" class="terminal"></div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn secondary" onclick="closeModal('deployModal')">Close</button>
+                <button class="btn" id="deployBtn" onclick="doDeploy()">Deploy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Modal -->
+    <div class="modal-overlay" id="scriptModal">
+        <div class="modal">
+            <h2>Run Script Session</h2>
+            <div class="form-group">
+                <label>Session Name</label>
+                <input type="text" id="scrName" placeholder="bot-script">
+            </div>
+            <div class="form-group">
+                <label>Working Directory (Optional)</label>
+                <input type="text" id="scrDir" placeholder="/data/data/com.termux/files/home">
+            </div>
+            <div class="form-group">
+                <label>Command</label>
+                <input type="text" id="scrCmd" placeholder="python3 main.py">
+            </div>
+            <div class="form-group">
+                <input type="checkbox" id="scrAuto"> <label style="display:inline">Add to Autostart</label>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn secondary" onclick="closeModal('scriptModal')">Cancel</button>
+                <button class="btn" onclick="doScript()">Run</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON Store Modal -->
+    <div class="modal-overlay" id="jsonModal">
+        <div class="modal">
+            <h2>Start JSON Store</h2>
+            <div class="form-group">
+                <label>Port</label>
+                <input type="number" id="jsPort" value="3000">
+            </div>
+            <div class="form-group">
+                <label>Folder Path</label>
+                <input type="text" id="jsFolder" value="/root/data">
+            </div>
+            <div class="form-group">
+                <input type="checkbox" id="jsExpose"> <label style="display:inline">Expose via Ngrok</label>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn secondary" onclick="closeModal('jsonModal')">Cancel</button>
+                <button class="btn" onclick="doJsonStore()">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ngrok Service Modal -->
+    <div class="modal-overlay" id="ngrokServiceModal">
+        <div class="modal">
+            <h2>Add Ngrok Service</h2>
+            <div class="form-group">
+                <label>Service Name</label>
+                <input type="text" id="ngSName" placeholder="webapp">
+            </div>
+            <div class="form-group">
+                <label>Local Port</label>
+                <input type="number" id="ngSPort" placeholder="8080">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn secondary" onclick="closeModal('ngrokServiceModal')">Cancel</button>
+                <button class="btn" onclick="doNgrokService()">Add & Restart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ngrok Token Modal -->
+    <div class="modal-overlay" id="ngrokTokenModal">
+        <div class="modal">
+            <h2>Configure Ngrok Token</h2>
+            <div class="form-group">
+                <label>Authtoken</label>
+                <input type="text" id="ngToken" placeholder="Your Ngrok Token">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button class="btn secondary" onclick="closeModal('ngrokTokenModal')">Cancel</button>
+                <button class="btn" onclick="doNgrokToken()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function toggleFab() {
+            const menu = document.getElementById('fabMenu');
+            const btn = document.getElementById('fabMain');
+            menu.classList.toggle('active');
+            btn.classList.toggle('active');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            const menu = document.getElementById('fabMenu');
+            const btn = document.getElementById('fabMain');
+            menu.classList.remove('active');
+            btn.classList.remove('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
         async function fetchSessions() {
             try {
                 const res = await fetch('/api/sessions');
@@ -202,9 +399,7 @@
                         <button class="btn danger" onclick="killSession('${s.name}')">Stop</button>
                     </div>
                 `).join('');
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function killSession(name) {
@@ -216,9 +411,7 @@
                     body: JSON.stringify({ sessionName: name })
                 });
                 fetchSessions();
-            } catch(e) {
-                alert('Failed to stop session');
-            }
+            } catch(e) { alert('Failed to stop session'); }
         }
 
         async function fetchNgrok() {
@@ -241,9 +434,86 @@
                         </div>
                     </div>
                 `).join('');
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
+        }
+
+        async function doScript() {
+            const body = {
+                name: document.getElementById('scrName').value,
+                dir: document.getElementById('scrDir').value,
+                command: document.getElementById('scrCmd').value,
+                autostart: document.getElementById('scrAuto').checked
+            };
+            if(!body.name || !body.command) return alert("Name and command required");
+            await fetch('/api/scripts/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            closeModal('scriptModal');
+            fetchSessions();
+        }
+
+        async function doJsonStore() {
+            const body = {
+                storePort: document.getElementById('jsPort').value,
+                folder: document.getElementById('jsFolder').value,
+                expose: document.getElementById('jsExpose').checked
+            };
+            if(!body.storePort || !body.folder) return alert("Port and folder required");
+            await fetch('/api/json-store/start', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            closeModal('jsonModal');
+            setTimeout(() => { fetchSessions(); fetchNgrok(); }, 1500);
+        }
+
+        async function doNgrokService() {
+            const body = {
+                name: document.getElementById('ngSName').value,
+                servicePort: document.getElementById('ngSPort').value
+            };
+            if(!body.name || !body.servicePort) return alert("Name and Port required");
+            await fetch('/api/ngrok/service', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            closeModal('ngrokServiceModal');
+            setTimeout(fetchNgrok, 2000);
+        }
+
+        async function doNgrokToken() {
+            const body = { token: document.getElementById('ngToken').value };
+            if(!body.token) return alert("Token required");
+            await fetch('/api/ngrok/token', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            closeModal('ngrokTokenModal');
+            alert("Token configured successfully!");
+        }
+
+        function doDeploy() {
+            const url = encodeURIComponent(document.getElementById('depUrl').value);
+            const name = encodeURIComponent(document.getElementById('depName').value);
+            const cmd = encodeURIComponent(document.getElementById('depCmd').value);
+            const auto = document.getElementById('depAuto').checked;
+
+            if(!url) return alert("URL required");
+
+            const term = document.getElementById('deployTerminal');
+            const btn = document.getElementById('deployBtn');
+            term.style.display = 'block';
+            term.innerHTML = '';
+            btn.disabled = true;
+
+            const es = new EventSource(\`/api/apps/deploy?url=\${url}&name=\${name}&startCmd=\${cmd}&autostart=\${auto}\`);
+            
+            es.onmessage = (e) => {
+                const data = JSON.parse(e.data);
+                if (data.log) {
+                    term.innerHTML += data.log.replace(/\\n/g, '<br>') + '<br>';
+                    term.scrollTop = term.scrollHeight;
+                }
+                if (data.done) {
+                    es.close();
+                    btn.disabled = false;
+                    fetchSessions();
+                }
+            };
+            es.onerror = () => {
+                term.innerHTML += '<br><span style="color:red">Connection lost or error occurred.</span><br>';
+                es.close();
+                btn.disabled = false;
+            };
         }
 
         fetchSessions();
