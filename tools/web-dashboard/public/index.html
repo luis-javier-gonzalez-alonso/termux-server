@@ -197,7 +197,6 @@
         }
         .form-group input[type="checkbox"] { width: auto; display: inline-block; }
         
-        /* Terminal Log Viewer */
         .terminal {
             background: #000;
             color: #0f0;
@@ -210,6 +209,15 @@
             font-size: 0.85rem;
             display: none;
         }
+
+        /* File Explorer */
+        .file-tree { list-style: none; padding-left: 20px; margin: 0; font-size: 0.95rem; }
+        .file-tree li { margin: 6px 0; }
+        .file-tree .folder { color: var(--primary); font-weight: 600; cursor: pointer; user-select: none; }
+        .file-tree .folder::before { content: "📁 "; font-size: 1.1rem; }
+        .file-tree .file { color: var(--text); cursor: pointer; transition: color 0.2s; }
+        .file-tree .file:hover { color: var(--primary); text-decoration: underline; }
+        .file-tree .file::before { content: "📄 "; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -219,13 +227,20 @@
                 <h1>Termux Server</h1>
                 <p style="color: var(--text-muted); margin-top: 8px; text-align: left;">Local Dashboard</p>
             </div>
-            <button class="btn secondary" onclick="fetchSessions(); fetchNgrok();">Refresh Data</button>
+            <button class="btn secondary" onclick="fetchSessions(); fetchApps(); fetchNgrok();">Refresh Data</button>
         </header>
 
         <div class="panel">
             <h2>Active Scripts (Tmux)</h2>
             <div id="sessions-list" class="list">
                 <div class="empty-state">Loading sessions...</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Installed Apps</h2>
+            <div id="apps-list" class="list">
+                <div class="empty-state">Loading apps...</div>
             </div>
         </div>
 
@@ -250,6 +265,29 @@
     </div>
 
     <!-- Modals -->
+    <!-- App Files Modal -->
+    <div class="modal-overlay" id="filesModal">
+        <div class="modal">
+            <h2>App Files: <span id="filesAppName"></span></h2>
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; max-height: 350px; overflow-y: auto; margin-bottom: 15px;">
+                <ul class="file-tree" id="filesTree"></ul>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+                <button class="btn secondary" onclick="closeModal('filesModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update App Modal -->
+    <div class="modal-overlay" id="updateModal">
+        <div class="modal">
+            <h2>Updating App: <span id="updateAppName"></span></h2>
+            <div id="updateTerminal" class="terminal" style="display:block;"></div>
+            <div style="display:flex; justify-content:flex-end;">
+                <button class="btn secondary" id="updateCloseBtn" onclick="closeModal('updateModal')">Close</button>
+            </div>
+        </div>
+    </div>
     <!-- View Log Modal -->
     <div class="modal-overlay" id="viewLogModal">
         <div class="modal">
@@ -429,6 +467,118 @@
             } catch(e) { alert('Failed to stop session'); }
         }
 
+        async function fetchApps() {
+            try {
+                const res = await fetch('/api/apps');
+                const apps = await res.json();
+                const list = document.getElementById('apps-list');
+                
+                if (apps.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No apps installed. Use the + button to deploy one!</div>';
+                    return;
+                }
+
+                list.innerHTML = apps.map(app => `
+                    <div class="card">
+                        <div class="card-info">
+                            <span class="card-title">${app.name}</span>
+                            <span class="card-meta">Path: ${app.path}</span>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                            <button class="btn" style="background:#1abc9c" onclick="updateApp('${app.name}')">Pull</button>
+                            <button class="btn secondary" onclick="viewFiles('${app.name}')">Files</button>
+                            <button class="btn danger" onclick="deleteApp('${app.name}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteApp(name) {
+            if (!confirm(`Are you sure you want to PERMANENTLY DELETE the app '${name}'?\nThis will remove the repository folder from disk.`)) return;
+            try {
+                const res = await fetch(`/api/apps/${name}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+                alert('App deleted successfully.');
+                fetchApps();
+            } catch(e) {
+                alert(`Failed to delete app: ${e.message}`);
+            }
+        }
+
+        async function updateApp(name) {
+            document.getElementById('updateAppName').innerText = name;
+            const term = document.getElementById('updateTerminal');
+            const btn = document.getElementById('updateCloseBtn');
+            term.innerHTML = '';
+            btn.disabled = true;
+            openModal('updateModal');
+            
+            try {
+                const response = await fetch(`/api/apps/${name}/update`, { method: 'POST' });
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    term.innerHTML += chunk.replace(/\\n/g, '<br>');
+                    term.scrollTop = term.scrollHeight;
+                }
+            } catch(e) {
+                term.innerHTML += `<br><span style="color:red">Fetch error: ${e.message}</span>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function viewFiles(name) {
+            document.getElementById('filesAppName').innerText = name;
+            const treeContainer = document.getElementById('filesTree');
+            treeContainer.innerHTML = '<li>Loading...</li>';
+            openModal('filesModal');
+            
+            try {
+                const res = await fetch(`/api/apps/${name}/files`);
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                
+                function renderTree(nodes) {
+                    if (!nodes || nodes.length === 0) return '<li><i style="color:#aaa">Empty</i></li>';
+                    return nodes.map(n => {
+                        if (n.type === 'directory') {
+                            return `<li>
+                                <div class="folder" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                                    ${n.name}
+                                </div>
+                                <ul class="file-tree" style="display:none;">${renderTree(n.children)}</ul>
+                            </li>`;
+                        } else {
+                            return `<li>
+                                <div class="file" onclick="copyPath('${n.path.replace(/\\/g, '\\\\')}')" title="Click to copy path">
+                                    ${n.name}
+                                </div>
+                            </li>`;
+                        }
+                    }).join('');
+                }
+                
+                treeContainer.innerHTML = renderTree(data.children);
+            } catch(e) {
+                treeContainer.innerHTML = `<li><span style="color:red">Failed to load files: ${e.message}</span></li>`;
+            }
+        }
+        
+        async function copyPath(path) {
+            try {
+                await navigator.clipboard.writeText(path);
+                alert('Path copied to clipboard:\\n' + path);
+            } catch(e) {
+                prompt('Failed to copy to clipboard automatically. Copy from below:', path);
+            }
+        }
+
         async function viewLog(name) {
             openModal('viewLogModal');
             const term = document.getElementById('viewLogTerminal');
@@ -553,9 +703,11 @@
         }
 
         fetchSessions();
+        fetchApps();
         fetchNgrok();
         setInterval(() => {
             fetchSessions();
+            fetchApps();
             fetchNgrok();
         }, 5000);
     </script>

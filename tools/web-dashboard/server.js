@@ -164,6 +164,103 @@ app.post('/api/scripts/start', (req, res) => {
     });
 });
 
+// --- App Lifecycle Endpoints ---
+app.get('/api/apps', (req, res) => {
+    if (!fs.existsSync(APPS_DIR)) return res.json([]);
+    const apps = fs.readdirSync(APPS_DIR, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => ({
+            name: dirent.name,
+            path: path.join(APPS_DIR, dirent.name)
+        }));
+    res.json(apps);
+});
+
+app.delete('/api/apps/:name', (req, res) => {
+    const { name } = req.params;
+    const appDir = path.join(APPS_DIR, name);
+    if (fs.existsSync(appDir)) {
+        try {
+            fs.rmSync(appDir, { recursive: true, force: true });
+        } catch(e) {
+            return res.status(500).send(`Failed to delete app directory: ${e.message}`);
+        }
+    }
+    
+    // Remove from autostart if present
+    if (fs.existsSync(STARTUP_FILE)) {
+        try {
+            const lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\n').filter(l => l && !l.startsWith(name + '|'));
+            fs.writeFileSync(STARTUP_FILE, lines.join('\n') + '\n');
+        } catch(e) {
+            console.error('Failed to update startup file:', e);
+        }
+    }
+    res.send('App deleted successfully');
+});
+
+app.post('/api/apps/:name/update', (req, res) => {
+    const { name } = req.params;
+    const appDir = path.join(APPS_DIR, name);
+    
+    if (!fs.existsSync(appDir)) return res.status(404).send('App not found');
+    
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    
+    const sendLog = (msg) => res.write(`${msg}\n`);
+    sendLog(`Starting git pull for ${name}...`);
+    
+    const pullCmd = `cd "${appDir}" && git pull`;
+    const gitProc = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', pullCmd]);
+    
+    gitProc.on('error', (err) => {
+        res.write(`\n--- DONE: FAILED ---\nGit pull error: ${err.message}\n`);
+        res.end();
+    });
+    
+    gitProc.stdout.on('data', d => res.write(d));
+    gitProc.stderr.on('data', d => res.write(d));
+    
+    gitProc.on('close', code => {
+        const status = code === 0 ? 'SUCCESS' : 'FAILED';
+        res.write(`\n--- DONE: ${status} ---\nGit pull completed with code ${code}\n`);
+        res.end();
+    });
+});
+
+app.get('/api/apps/:name/files', (req, res) => {
+    const { name } = req.params;
+    const appDir = path.join(APPS_DIR, name);
+    
+    if (!fs.existsSync(appDir)) return res.status(404).send('App not found');
+    
+    const getFilesRecursive = (dir) => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        return entries
+            .filter(e => !['.git', 'node_modules', '__pycache__'].includes(e.name))
+            .map(e => {
+                const fullPath = path.join(dir, e.name);
+                if (e.isDirectory()) {
+                    return { type: 'directory', name: e.name, path: fullPath, children: getFilesRecursive(fullPath) };
+                } else {
+                    return { type: 'file', name: e.name, path: fullPath };
+                }
+            })
+            .sort((a, b) => {
+                if (a.type === b.type) return a.name.localeCompare(b.name);
+                return a.type === 'directory' ? -1 : 1;
+            });
+    };
+    
+    try {
+        const tree = getFilesRecursive(appDir);
+        res.json({ name, path: appDir, children: tree });
+    } catch(e) {
+        res.status(500).send(`Failed to read directory: ${e.message}`);
+    }
+});
+
 // Deploy App via streaming POST
 app.post('/api/apps/deploy', (req, res) => {
     const { url, name, startCmd, autostart } = req.body;
