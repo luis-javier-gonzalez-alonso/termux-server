@@ -62,7 +62,7 @@ app.post('/api/ngrok/token', (req, res) => {
 
 // Add Ngrok Service
 app.post('/api/ngrok/service', (req, res) => {
-    const { name, servicePort } = req.body; // Changed from port to servicePort to avoid shadowing outer port
+    const { name, servicePort } = req.body; 
     if (!name || !servicePort) return res.status(400).send('Name and port required');
     
     const cmd = `
@@ -87,7 +87,7 @@ app.post('/api/ngrok/service', (req, res) => {
 
 // Start JSON Store
 app.post('/api/json-store/start', (req, res) => {
-    const { storePort, folder, expose } = req.body; // Changed from port to storePort
+    const { storePort, folder, expose } = req.body; 
     if (!storePort || !folder) return res.status(400).send('Port and folder required');
     
     const startStore = () => {
@@ -99,7 +99,6 @@ app.post('/api/json-store/start', (req, res) => {
     };
 
     if (expose) {
-        // Append to ngrok
         const ngrokCmd = `
             proot-distro login alpine --isolated -- /bin/sh -c "
                 if ! grep -q 'addr: ${storePort}' /root/.config/ngrok/ngrok.yml 2>/dev/null; then
@@ -132,13 +131,13 @@ app.post('/api/scripts/start', (req, res) => {
     if (autostart) {
         let lines = [];
         if (fs.existsSync(STARTUP_FILE)) {
-            lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\\n').filter(l => l && !l.startsWith(name + '|'));
+            lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\n').filter(l => l && !l.startsWith(name + '|'));
         }
         lines.push(`${name}|${workDir}|${command}`);
-        fs.writeFileSync(STARTUP_FILE, lines.join('\\n') + '\\n');
+        fs.writeFileSync(STARTUP_FILE, lines.join('\n') + '\n');
     }
     
-    const sName = name.replace(/\\s+/g, '');
+    const sName = name.replace(/\s+/g, '');
     const cmd = `tmux new-session -d -c "${workDir}" -s "${sName}" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${workDir}\\" \\"${command}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
     
     exec(cmd, (err, stdout, stderr) => {
@@ -156,23 +155,23 @@ app.get('/api/apps/deploy', (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     
-    const sendLog = (msg) => res.write(\`data: \${JSON.stringify({ log: msg })}\\n\\n\`);
+    const sendLog = (msg) => res.write(`data: ${JSON.stringify({ log: msg })}\n\n`);
     const sendDone = (success, msg) => {
-        res.write(\`data: \${JSON.stringify({ done: true, success, log: msg })}\\n\\n\`);
+        res.write(`data: ${JSON.stringify({ done: true, success, log: msg })}\n\n`);
         res.end();
     };
 
     const repoName = path.basename(url, '.git');
     const appDir = path.join(APPS_DIR, repoName);
     
-    sendLog(\`Starting deployment of \${url}...\`);
+    sendLog(`Starting deployment of ${url}...`);
     
     if (fs.existsSync(appDir)) {
-        sendLog(\`Directory \${repoName} exists. Removing...\`);
+        sendLog(`Directory ${repoName} exists. Removing...`);
         fs.rmSync(appDir, { recursive: true, force: true });
     }
     
-    sendLog(\`Cloning repository natively...\`);
+    sendLog(`Cloning repository natively...`);
     const git = spawn('git', ['clone', url, appDir]);
     
     git.stdout.on('data', d => sendLog(d.toString()));
@@ -181,36 +180,36 @@ app.get('/api/apps/deploy', (req, res) => {
     git.on('close', code => {
         if (code !== 0) return sendDone(false, 'Git clone failed.');
         
-        sendLog(\`Repository cloned successfully to \${appDir}.\`);
+        sendLog(`Repository cloned successfully to ${appDir}.`);
         
         let installCmd = '';
         if (fs.existsSync(path.join(appDir, 'package.json'))) {
             sendLog('Found package.json. Will install Node.js dependencies...');
-            installCmd = \`cd "\${appDir}" && npm install --no-audit --no-fund --silent\`;
+            installCmd = `cd "${appDir}" && npm install --no-audit --no-fund --silent`;
         } else if (fs.existsSync(path.join(appDir, 'requirements.txt'))) {
             sendLog('Found requirements.txt. Will install Python dependencies...');
-            installCmd = \`cd "\${appDir}" && pip install -r requirements.txt --break-system-packages\`;
+            installCmd = `cd "${appDir}" && pip install -r requirements.txt --break-system-packages`;
         } else {
             sendLog('No auto-detectable dependencies found.');
         }
         
         const finishDeployment = () => {
-            const sName = name ? name.replace(/\\s+/g, '') : repoName;
+            const sName = name ? name.replace(/\s+/g, '') : repoName;
             if (autostart === 'true' && startCmd) {
                 let lines = [];
                 if (fs.existsSync(STARTUP_FILE)) {
-                    lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\\n').filter(l => l && !l.startsWith(sName + '|'));
+                    lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\n').filter(l => l && !l.startsWith(sName + '|'));
                 }
-                lines.push(\`\${sName}|\${appDir}|\${startCmd}\`);
-                fs.writeFileSync(STARTUP_FILE, lines.join('\\n') + '\\n');
+                lines.push(`${sName}|${appDir}|${startCmd}`);
+                fs.writeFileSync(STARTUP_FILE, lines.join('\n') + '\n');
                 sendLog('Added to startup list.');
             }
             
             if (startCmd) {
-                sendLog(\`Starting app session '\${sName}'...\`);
-                const tCmd = \`tmux new-session -d -c "\${appDir}" -s "\${sName}" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"\${appDir}\\" \\"\${startCmd}\\"; echo ''; echo '--- Process Exited ---'; read r"\`;
+                sendLog(`Starting app session '${sName}'...`);
+                const tCmd = `tmux new-session -d -c "${appDir}" -s "${sName}" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${appDir}\\" \\"${startCmd}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
                 exec(tCmd, (e, stdo, stde) => {
-                    if (e) return sendDone(false, \`Failed to start tmux session: \${stde}\`);
+                    if (e) return sendDone(false, `Failed to start tmux session: ${stde}`);
                     sendDone(true, 'Deployment complete and app started successfully!');
                 });
             } else {
@@ -219,12 +218,12 @@ app.get('/api/apps/deploy', (req, res) => {
         };
         
         if (installCmd) {
-            sendLog(\`Running dependency installation in Alpine... (this may take a while)\`);
+            sendLog(`Running dependency installation in Alpine... (this may take a while)`);
             const installer = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', installCmd]);
             installer.stdout.on('data', d => sendLog(d.toString()));
             installer.stderr.on('data', d => sendLog(d.toString()));
             installer.on('close', icode => {
-                if (icode !== 0) sendLog(\`Warning: Dependency installation exited with code \${icode}\`);
+                if (icode !== 0) sendLog(`Warning: Dependency installation exited with code ${icode}`);
                 else sendLog('Dependencies installed successfully.');
                 finishDeployment();
             });
@@ -235,5 +234,5 @@ app.get('/api/apps/deploy', (req, res) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-    console.log(\`Web Dashboard running at http://localhost:\${port}\`);
+    console.log(`Web Dashboard running at http://localhost:${port}`);
 });

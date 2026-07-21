@@ -495,12 +495,12 @@
             term.innerHTML = '';
             btn.disabled = true;
 
-            const es = new EventSource(\`/api/apps/deploy?url=\${url}&name=\${name}&startCmd=\${cmd}&autostart=\${auto}\`);
+            const es = new EventSource(`/api/apps/deploy?url=${url}&name=${name}&startCmd=${cmd}&autostart=${auto}`);
             
             es.onmessage = (e) => {
                 const data = JSON.parse(e.data);
                 if (data.log) {
-                    term.innerHTML += data.log.replace(/\\n/g, '<br>') + '<br>';
+                    term.innerHTML += data.log.replace(/\n/g, '<br>') + '<br>';
                     term.scrollTop = term.scrollHeight;
                 }
                 if (data.done) {
