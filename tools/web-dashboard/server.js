@@ -174,17 +174,18 @@ app.post('/api/apps/deploy', (req, res) => {
         }
     }
     
-    sendLog(`Cloning repository natively...`);
-    const git = spawn('git', ['clone', url, appDir]);
+    sendLog(`Cloning repository in Alpine...`);
+    const cloneCmd = `git clone "${url}" "${appDir}"`;
+    const gitProc = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', cloneCmd]);
     
-    git.on('error', (err) => {
+    gitProc.on('error', (err) => {
         sendDone(false, `Git spawn error: ${err.message}`);
     });
     
-    git.stdout.on('data', d => res.write(d));
-    git.stderr.on('data', d => res.write(d));
+    gitProc.stdout.on('data', d => res.write(d));
+    gitProc.stderr.on('data', d => res.write(d));
     
-    git.on('close', code => {
+    gitProc.on('close', code => {
         if (code !== 0) return sendDone(false, 'Git clone failed.');
         
         sendLog(`\nRepository cloned successfully to ${appDir}.`);
