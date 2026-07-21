@@ -19,11 +19,11 @@ start_script() {
             grep -v "^$SNAME|" "$STARTUP_FILE" > "${STARTUP_FILE}.tmp"
             mv "${STARTUP_FILE}.tmp" "$STARTUP_FILE"
         fi
-        echo "$SNAME|$CMD" >> "$STARTUP_FILE"
+        echo "$SNAME|$PWD|$CMD" >> "$STARTUP_FILE"
         whiptail --msgbox "Added to startup sequence!" 0 0
     fi
     
-    tmux new-session -d -s "$SNAME" "$CMD"
+    tmux new-session -d -c "$PWD" -s "$SNAME" "$CMD; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
     whiptail --msgbox "Session '$SNAME' started successfully.\nYou can attach to it from the menu." 0 0
 }
 
