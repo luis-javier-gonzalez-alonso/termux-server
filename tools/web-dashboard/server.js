@@ -29,8 +29,18 @@ app.get('/api/sessions', (req, res) => {
 });
 
 app.post('/api/sessions/kill', (req, res) => {
-    const { sessionName } = req.body;
+    const { sessionName, removeAutostart } = req.body;
     if (!sessionName) return res.status(400).send('Session name required');
+    
+    if (removeAutostart && fs.existsSync(STARTUP_FILE)) {
+        try {
+            const lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\n').filter(l => l && !l.startsWith(sessionName + '|'));
+            fs.writeFileSync(STARTUP_FILE, lines.join('\n') + '\n');
+        } catch(e) {
+            console.error('Failed to update startup file:', e);
+        }
+    }
+
     exec(`tmux kill-session -t "${sessionName}"`, (err) => {
         if (err) return res.status(500).send('Failed to kill session');
         res.send('Success');

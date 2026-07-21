@@ -418,11 +418,12 @@
 
         async function killSession(name) {
             if (!confirm(`Are you sure you want to stop ${name}?`)) return;
+            const removeAutostart = confirm(`Do you also want to remove '${name}' from the autostart list?`);
             try {
                 await fetch('/api/sessions/kill', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionName: name })
+                    body: JSON.stringify({ sessionName: name, removeAutostart })
                 });
                 fetchSessions();
             } catch(e) { alert('Failed to stop session'); }
