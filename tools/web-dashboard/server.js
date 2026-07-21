@@ -174,6 +174,10 @@ app.get('/api/apps/deploy', (req, res) => {
     sendLog(`Cloning repository natively...`);
     const git = spawn('git', ['clone', url, appDir]);
     
+    git.on('error', (err) => {
+        sendDone(false, `Git spawn error: ${err.message}`);
+    });
+    
     git.stdout.on('data', d => sendLog(d.toString()));
     git.stderr.on('data', d => sendLog(d.toString()));
     
@@ -209,7 +213,7 @@ app.get('/api/apps/deploy', (req, res) => {
                 sendLog(`Starting app session '${sName}'...`);
                 const tCmd = `tmux new-session -d -c "${appDir}" -s "${sName}" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \\"$1\\" && eval \\"$2\\"' _ \\"${appDir}\\" \\"${startCmd}\\"; echo ''; echo '--- Process Exited ---'; read r"`;
                 exec(tCmd, (e, stdo, stde) => {
-                    if (e) return sendDone(false, `Failed to start tmux session: ${stde}`);
+                    if (e) return sendDone(false, `Failed to start tmux session: ${stde || e.message}`);
                     sendDone(true, 'Deployment complete and app started successfully!');
                 });
             } else {
@@ -220,6 +224,12 @@ app.get('/api/apps/deploy', (req, res) => {
         if (installCmd) {
             sendLog(`Running dependency installation in Alpine... (this may take a while)`);
             const installer = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', installCmd]);
+            
+            installer.on('error', (err) => {
+                sendLog(`Warning: Failed to spawn dependency installer: ${err.message}`);
+                finishDeployment();
+            });
+
             installer.stdout.on('data', d => sendLog(d.toString()));
             installer.stderr.on('data', d => sendLog(d.toString()));
             installer.on('close', icode => {
