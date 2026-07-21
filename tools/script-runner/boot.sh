@@ -1,6 +1,7 @@
 #!/bin/sh
 
-STARTUP_FILE="/usr/local/share/termux-server/tools/script-runner/startup.list"
+STATE_DIR="$HOME/.termux-server"
+STARTUP_FILE="$STATE_DIR/startup.list"
 
 if [ -f "$STARTUP_FILE" ]; then
     while IFS='|' read -r sname field2 field3 || [ -n "$sname" ]; do
@@ -14,7 +15,7 @@ if [ -f "$STARTUP_FILE" ]; then
             fi
             
             if ! tmux has-session -t "$sname" 2>/dev/null; then
-                tmux new-session -d -c "$dir" -s "$sname" "$cmd; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
+                tmux new-session -d -c "$dir" -s "$sname" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \"\$1\" && eval \"\$2\"' _ \"$dir\" \"$cmd\"; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
                 echo "Started Script Runner session: $sname"
             fi
         fi

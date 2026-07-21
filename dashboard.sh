@@ -2,20 +2,24 @@
 
 #!/bin/sh
 
+DIR="$(cd "$(dirname "$0")" && pwd)"
+
 while true; do
     CHOICE=$(whiptail --title "Termux Server Dashboard" --menu "Choose an option" 0 0 0 \
-    "1" "Ngrok Manager" \
+    "1" "Deploy App from GitHub" \
     "2" "Script Runner (tmux)" \
     "3" "JSON Object Storage" \
-    "4" "Open Shell" \
-    "5" "Exit to Termux" 3>&1 1>&2 2>&3)
+    "4" "Ngrok Manager" \
+    "5" "Open Shell" \
+    "6" "Exit to Termux" 3>&1 1>&2 2>&3)
 
     case $CHOICE in
-        1) sh /usr/local/share/termux-server/tools/ngrok-manager/ngrok.sh ;;
-        2) sh /usr/local/share/termux-server/tools/script-runner/runner.sh ;;
-        3) sh /usr/local/share/termux-server/tools/json-store/runner.sh ;;
-        4) clear; echo "Dropping to shell. Type 'exit' to log out, or '/usr/local/bin/dashboard.sh' to return to menu."; break ;;
-        5) clear; kill -9 $PPID ;;
+        1) sh "$DIR/tools/app-installer/installer.sh" ;;
+        2) sh "$DIR/tools/script-runner/runner.sh" ;;
+        3) sh "$DIR/tools/json-store/runner.sh" ;;
+        4) sh "$DIR/tools/ngrok-manager/ngrok.sh" ;;
+        5) clear; echo "Dropping to proot alpine shell..."; proot-distro login alpine --isolated; break ;;
+        6) clear; kill -9 $PPID 2>/dev/null || exit 0 ;;
         *) break ;;
     esac
 done

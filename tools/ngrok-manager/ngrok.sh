@@ -22,14 +22,14 @@ show_ngrok_url() {
 }
 
 show_services() {
-    NGROK_STATUS=$(pgrep -x ngrok > /dev/null && echo "Running" || echo "Stopped")
+    NGROK_STATUS=$(tmux has-session -t "ngrok-system" 2>/dev/null && echo "Running" || echo "Stopped")
     whiptail --msgbox "Service Status:\n\nNgrok: $NGROK_STATUS" 0 0
 }
 
 install_ngrok_token() {
     TOKEN=$(whiptail --inputbox "Enter your Ngrok Authtoken:\n(You can get this from dashboard.ngrok.com)" 0 0 --title "Ngrok Setup" 3>&1 1>&2 2>&3)
     if [ ! -z "$TOKEN" ]; then
-        ngrok config add-authtoken "$TOKEN"
+        proot-distro login alpine --isolated -- ngrok config add-authtoken "$TOKEN"
         whiptail --msgbox "Authtoken added successfully! You can now start ngrok." 0 0
     fi
 }
@@ -41,15 +41,16 @@ add_ngrok_service() {
     PORT=$(whiptail --inputbox "Enter the port number this service runs on (e.g. 11001):" 0 0 --title "Add Ngrok Service" 3>&1 1>&2 2>&3)
     if [ -z "$PORT" ]; then return; fi
     
-    # Append to ngrok.yml
-    echo "  $NAME:" >> /root/.config/ngrok/ngrok.yml
-    echo "    proto: http" >> /root/.config/ngrok/ngrok.yml
-    echo "    addr: $PORT" >> /root/.config/ngrok/ngrok.yml
+    # Append to ngrok.yml inside alpine
+    proot-distro login alpine --isolated -- /bin/sh -c "
+        echo '  $NAME:' >> /root/.config/ngrok/ngrok.yml
+        echo '    proto: http' >> /root/.config/ngrok/ngrok.yml
+        echo '    addr: $PORT' >> /root/.config/ngrok/ngrok.yml
+    "
     
     whiptail --msgbox "Service '$NAME' added on port $PORT!\nRestarting Ngrok..." 0 0
     if tmux has-session -t "ngrok-system" 2>/dev/null; then tmux kill-session -t "ngrok-system"; fi
-    pkill -x ngrok
-    tmux new-session -d -s "ngrok-system" "ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout; echo ''; echo '--- Ngrok Exited ---'; echo 'Press Enter to close...'; read r"
+    tmux new-session -d -s "ngrok-system" "proot-distro login alpine --isolated -- ngrok start --all --config /root/.config/ngrok/ngrok.yml --log=stdout; echo ''; echo '--- Ngrok Exited ---'; echo 'Press Enter to close...'; read r"
 }
 
 while true; do

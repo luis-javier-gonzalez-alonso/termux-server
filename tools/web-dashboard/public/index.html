@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termux Server Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            gap: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 2rem;
+            margin: 0;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .panel {
+            background: var(--surface);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .card-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn.danger {
+            background: var(--danger);
+        }
+
+        .btn.danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Termux Server</h1>
+            <p style="color: var(--text-muted); margin-top: 8px;">Local Dashboard</p>
+        </header>
+
+        <div class="panel">
+            <h2>Active Scripts (Tmux)</h2>
+            <div id="sessions-list" class="list">
+                <div class="empty-state">Loading sessions...</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Exposed Services (Ngrok)</h2>
+            <div id="ngrok-list" class="list">
+                <div class="empty-state">Loading services...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchSessions() {
+            try {
+                const res = await fetch('/api/sessions');
+                const sessions = await res.json();
+                const list = document.getElementById('sessions-list');
+                
+                if (sessions.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No active scripts running.</div>';
+                    return;
+                }
+
+                list.innerHTML = sessions.map(s => `
+                    <div class="card">
+                        <div class="card-info">
+                            <span class="card-title">${s.name} <span class="badge">Running</span></span>
+                            <span class="card-meta">Started: ${new Date(s.created * 1000).toLocaleString()}</span>
+                        </div>
+                        <button class="btn danger" onclick="killSession('${s.name}')">Stop</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function killSession(name) {
+            if (!confirm(`Are you sure you want to stop ${name}?`)) return;
+            try {
+                await fetch('/api/sessions/kill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionName: name })
+                });
+                fetchSessions();
+            } catch(e) {
+                alert('Failed to stop session');
+            }
+        }
+
+        async function fetchNgrok() {
+            try {
+                const res = await fetch('/api/ngrok');
+                const data = await res.json();
+                const list = document.getElementById('ngrok-list');
+                
+                if (!data.tunnels || data.tunnels.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No exposed services running.</div>';
+                    return;
+                }
+
+                list.innerHTML = data.tunnels.map(t => `
+                    <div class="card">
+                        <div class="card-info">
+                            <span class="card-title">${t.name} <span class="badge">Online</span></span>
+                            <span class="card-meta"><a href="${t.public_url}" target="_blank" style="color:var(--primary);text-decoration:none">${t.public_url}</a></span>
+                            <span class="card-meta" style="margin-top:2px">Routing to: ${t.config.addr}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        fetchSessions();
+        fetchNgrok();
+        setInterval(() => {
+            fetchSessions();
+            fetchNgrok();
+        }, 5000);
+    </script>
+</body>
+</html>

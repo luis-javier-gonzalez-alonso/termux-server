@@ -1,6 +1,8 @@
 #!/bin/sh
 
-STARTUP_FILE="/usr/local/share/termux-server/tools/script-runner/startup.list"
+STATE_DIR="$HOME/.termux-server"
+mkdir -p "$STATE_DIR"
+STARTUP_FILE="$STATE_DIR/startup.list"
 
 start_script() {
     SNAME=$(whiptail --inputbox "Enter a name for this session (no spaces):" 0 0 --title "Start Script" 3>&1 1>&2 2>&3)
@@ -13,7 +15,6 @@ start_script() {
     if [ -z "$CMD" ]; then return; fi
 
     if whiptail --yesno "Run this script automatically on server startup?" 0 0 --title "Startup Config"; then
-        mkdir -p /usr/local/share/termux-server/tools/script-runner
         # Remove old entry if exists to avoid duplicates
         if [ -f "$STARTUP_FILE" ]; then
             grep -v "^$SNAME|" "$STARTUP_FILE" > "${STARTUP_FILE}.tmp"
@@ -23,7 +24,7 @@ start_script() {
         whiptail --msgbox "Added to startup sequence!" 0 0
     fi
     
-    tmux new-session -d -c "$PWD" -s "$SNAME" "$CMD; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
+    tmux new-session -d -c "$PWD" -s "$SNAME" "proot-distro login alpine --isolated -- /bin/sh -c 'cd \"\$1\" && eval \"\$2\"' _ \"$PWD\" \"$CMD\"; echo ''; echo '--- Process Exited ---'; echo 'Press Enter to close...'; read r"
     whiptail --msgbox "Session '$SNAME' started successfully.\nYou can attach to it from the menu." 0 0
 }
 
