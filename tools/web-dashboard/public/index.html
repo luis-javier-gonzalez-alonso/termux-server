@@ -481,13 +481,15 @@
             alert("Token configured successfully!");
         }
 
-        function doDeploy() {
-            const url = encodeURIComponent(document.getElementById('depUrl').value);
-            const name = encodeURIComponent(document.getElementById('depName').value);
-            const cmd = encodeURIComponent(document.getElementById('depCmd').value);
-            const auto = document.getElementById('depAuto').checked;
+        async function doDeploy() {
+            const body = {
+                url: document.getElementById('depUrl').value,
+                name: document.getElementById('depName').value,
+                startCmd: document.getElementById('depCmd').value,
+                autostart: document.getElementById('depAuto').checked
+            };
 
-            if(!url) return alert("URL required");
+            if(!body.url) return alert("URL required");
 
             const term = document.getElementById('deployTerminal');
             const btn = document.getElementById('deployBtn');
@@ -495,25 +497,30 @@
             term.innerHTML = '';
             btn.disabled = true;
 
-            const es = new EventSource(`/api/apps/deploy?url=${url}&name=${name}&startCmd=${cmd}&autostart=${auto}`);
-            
-            es.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                if (data.log) {
-                    term.innerHTML += data.log.replace(/\n/g, '<br>') + '<br>';
+            try {
+                const response = await fetch('/api/apps/deploy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    term.innerHTML += chunk.replace(/\n/g, '<br>');
                     term.scrollTop = term.scrollHeight;
                 }
-                if (data.done) {
-                    es.close();
-                    btn.disabled = false;
-                    fetchSessions();
-                }
-            };
-            es.onerror = () => {
-                term.innerHTML += '<br><span style="color:red">Connection lost or error occurred.</span><br>';
-                es.close();
+            } catch (err) {
+                term.innerHTML += `<br><span style="color:red">Fetch error: ${err.message}</span><br>`;
+            } finally {
                 btn.disabled = false;
-            };
+                fetchSessions();
+            }
         }
 
         fetchSessions();

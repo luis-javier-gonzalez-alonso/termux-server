@@ -146,18 +146,17 @@ app.post('/api/scripts/start', (req, res) => {
     });
 });
 
-// Deploy App via SSE
-app.get('/api/apps/deploy', (req, res) => {
-    const { url, name, startCmd, autostart } = req.query;
+// Deploy App via streaming POST
+app.post('/api/apps/deploy', (req, res) => {
+    const { url, name, startCmd, autostart } = req.body;
     if (!url) return res.status(400).send('URL required');
     
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Transfer-Encoding', 'chunked');
     
-    const sendLog = (msg) => res.write(`data: ${JSON.stringify({ log: msg })}\n\n`);
+    const sendLog = (msg) => res.write(`${msg}\n`);
     const sendDone = (success, msg) => {
-        res.write(`data: ${JSON.stringify({ done: true, success, log: msg })}\n\n`);
+        res.write(`\n--- DONE: ${success ? 'SUCCESS' : 'FAILED'} ---\n${msg}\n`);
         res.end();
     };
 
@@ -168,7 +167,11 @@ app.get('/api/apps/deploy', (req, res) => {
     
     if (fs.existsSync(appDir)) {
         sendLog(`Directory ${repoName} exists. Removing...`);
-        fs.rmSync(appDir, { recursive: true, force: true });
+        try {
+            fs.rmSync(appDir, { recursive: true, force: true });
+        } catch(e) {
+            return sendDone(false, `Failed to remove old directory: ${e.message}`);
+        }
     }
     
     sendLog(`Cloning repository natively...`);
@@ -178,13 +181,13 @@ app.get('/api/apps/deploy', (req, res) => {
         sendDone(false, `Git spawn error: ${err.message}`);
     });
     
-    git.stdout.on('data', d => sendLog(d.toString()));
-    git.stderr.on('data', d => sendLog(d.toString()));
+    git.stdout.on('data', d => res.write(d));
+    git.stderr.on('data', d => res.write(d));
     
     git.on('close', code => {
         if (code !== 0) return sendDone(false, 'Git clone failed.');
         
-        sendLog(`Repository cloned successfully to ${appDir}.`);
+        sendLog(`\nRepository cloned successfully to ${appDir}.`);
         
         let installCmd = '';
         if (fs.existsSync(path.join(appDir, 'package.json'))) {
@@ -199,14 +202,18 @@ app.get('/api/apps/deploy', (req, res) => {
         
         const finishDeployment = () => {
             const sName = name ? name.replace(/\s+/g, '') : repoName;
-            if (autostart === 'true' && startCmd) {
-                let lines = [];
-                if (fs.existsSync(STARTUP_FILE)) {
-                    lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\n').filter(l => l && !l.startsWith(sName + '|'));
+            if (autostart) {
+                try {
+                    let lines = [];
+                    if (fs.existsSync(STARTUP_FILE)) {
+                        lines = fs.readFileSync(STARTUP_FILE, 'utf8').split('\n').filter(l => l && !l.startsWith(sName + '|'));
+                    }
+                    lines.push(`${sName}|${appDir}|${startCmd || ''}`);
+                    fs.writeFileSync(STARTUP_FILE, lines.join('\n') + '\n');
+                    sendLog('Added to startup list.');
+                } catch(e) {
+                    sendLog(`Warning: Failed to write to startup file: ${e.message}`);
                 }
-                lines.push(`${sName}|${appDir}|${startCmd}`);
-                fs.writeFileSync(STARTUP_FILE, lines.join('\n') + '\n');
-                sendLog('Added to startup list.');
             }
             
             if (startCmd) {
@@ -222,19 +229,19 @@ app.get('/api/apps/deploy', (req, res) => {
         };
         
         if (installCmd) {
-            sendLog(`Running dependency installation in Alpine... (this may take a while)`);
+            sendLog(`\nRunning dependency installation in Alpine... (this may take a while)`);
             const installer = spawn('proot-distro', ['login', 'alpine', '--isolated', '--', '/bin/sh', '-c', installCmd]);
             
             installer.on('error', (err) => {
-                sendLog(`Warning: Failed to spawn dependency installer: ${err.message}`);
+                sendLog(`\nWarning: Failed to spawn dependency installer: ${err.message}`);
                 finishDeployment();
             });
 
-            installer.stdout.on('data', d => sendLog(d.toString()));
-            installer.stderr.on('data', d => sendLog(d.toString()));
+            installer.stdout.on('data', d => res.write(d));
+            installer.stderr.on('data', d => res.write(d));
             installer.on('close', icode => {
-                if (icode !== 0) sendLog(`Warning: Dependency installation exited with code ${icode}`);
-                else sendLog('Dependencies installed successfully.');
+                if (icode !== 0) sendLog(`\nWarning: Dependency installation exited with code ${icode}`);
+                else sendLog('\nDependencies installed successfully.');
                 finishDeployment();
             });
         } else {
